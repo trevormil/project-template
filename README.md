@@ -1,0 +1,80 @@
+# project-template
+
+A reusable, self-contained **workflow template** for private GitHub projects.
+Drop it into a new repo and you get a complete, in-repo development loop:
+sessions → tickets → feature branches → PRs → Codex code-review → human merge,
+with a knowledge base, TDD gate, and autonomous/AFK modes — all versioned with
+the code, no external tracker or dashboard.
+
+Loads on top of the global `~/.claude/CLAUDE.md` (§1–10). Forge is **GitHub**
+(`gh`, "PR"). Merge to `main` is **human-only** (global §8).
+
+## Use it
+
+**New repo** — make it a GitHub template repo, then:
+```bash
+gh repo create <name> --private --template <owner>/project-template --clone
+cd <name>
+# fill the placeholders in CLAUDE.md, then:
+/session-start "scaffold the project"
+```
+
+**Existing repo** — retrofit with the bootstrap (non-clobbering; writes
+`*.workflow` alongside anything it would overwrite):
+```bash
+./bootstrap.sh /path/to/your-repo
+```
+
+## What's inside
+
+```
+CLAUDE.md                     project workflow + conventions (fill placeholders)
+bootstrap.sh                  inject the workflow into an existing repo
+.claude/
+  settings.json               deny secrets + gh pr merge; wires the merge hook
+  hooks/block-main-merge.sh   PreToolUse gate — blocks merge/push to main/master
+  skills/
+    ticket/                   in-repo backlog tickets (+ horizon tag, atomic ids)
+    session-start/            open a session: seed live doc + TDD checklist
+    session-end/              close a session: document, clean up, file follow-ups
+    pr-creation/              ticket → branch → PR (gh) → link back to ticket
+    code-review/              Codex review → in-repo .reviews/ artifacts
+    test-suite/               ad-hoc chat-only test run (the cheap inner loop)
+    security-scan/            deterministic security floor (CVE/secrets/SAST)
+    document/ document-audit/ knowledge base capture + rot check
+    notify/                   on-demand AFK Telegram bridge
+    stacked-mr/               autonomous overnight PR stacking
+.agents/
+  code-review.md              review contract: schema, six-axis rubric, verdicts
+  testing.md                  test-runner detection
+.github/workflows/ci.yml      format + typecheck + test (+ optional eval gate)
+docs/
+  decisions/                  ADRs (append-only; 0001 is the template)
+  architecture.md             evergreen system overview (edit in place)
+  runbooks/  learnings/        ops procedures + non-obvious findings
+backlog/.next-id              ticket counter (tickets land here as NNNN-slug.md)
+sessions/                     live session docs (central state), NNNN-slug/
+.reviews/                     in-repo code-review artifacts, per PR
+```
+
+## The loop
+
+```
+/session-start "<goal>"  →  /ticket  →  feature branch  →  TDD  →
+/pr-creation  →  /code-review (background)  →  <human merges>  →  /session-end
+```
+
+See [`CLAUDE.md`](./CLAUDE.md) for the full conventions: the TDD gate, the
+`horizon` ticket tag, the code-review merge bar, the doc-anchoring convention
+(`[N]` / `[N.M]` greppable headings + per-doc `anchor:` codes), the
+"when picking back up" checklist, and the autonomous/AFK modes.
+
+## Requirements
+
+- [Claude Code](https://claude.com/claude-code) — runs the skills.
+- [`codex`](https://github.com/openai/codex) CLI — `/code-review`, `/test-suite`
+  delegate to it (`-s danger-full-access`).
+- `gh` (authenticated) — PR creation + resolution.
+- `bun` — default toolchain (global §5).
+- `jq` — used by the merge-block hook.
+- Telegram scripts/creds in `~/.claude` (optional) — only for `/notify`.

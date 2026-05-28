@@ -1,0 +1,22 @@
+# Transient lock dirs for the atomic id allocators (the counters themselves —
+# backlog/.next-id and sessions/.next-id — ARE committed; only the locks aren't)
+backlog/.next-id.lock
+sessions/.next-id.lock
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Dependencies / build
+node_modules/
+dist/
+build/
+.venv/
+
+# OS / editor cruft
+.DS_Store
+*.log
