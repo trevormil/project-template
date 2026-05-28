@@ -12,7 +12,7 @@ what to pick up next.>
 
 ## Operating principles (read first)
 
-Two mindset rules that override convenience everywhere in this workflow:
+Mindset rules that override convenience everywhere in this workflow:
 
 - **Production-grade, always.** Never assume a codebase is a demo, an
   assignment, a prototype, or throwaway — treat every repo as if it ships to
@@ -33,8 +33,13 @@ Two mindset rules that override convenience everywhere in this workflow:
   the "Winchester House" failure mode: every addition must earn its keep
   (global §2). Prefer deleting to adding; the smallest thing that satisfies the
   ticket wins.
-
-## [1] How we work here
+- **Nothing is static — docs, conventions, and the workflow itself are live.**
+  This template is a starting point, not a frozen spec. If a skill is wrong or a
+  step is missing, upgrade it; if a convention stops fitting, change it; if a doc
+  drifts from reality, update it in place (ADRs evolve via supersede — see §7);
+  if the core workflow needs to change, change it. Always be experimenting —
+  assume nothing here is frozen, including this file. The cost of a stale
+  convention is paid on every future task. (Global §11.)
 
 The loop, in order. Everything is tracked **in this repo** — no external tracker,
 no central dashboard.
