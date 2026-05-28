@@ -50,7 +50,9 @@ everything relevant to the goal. Run these in parallel where possible:
   sections — unfinished work and suggested tickets carry forward. Link them in
   `prior_sessions`.
 - **Git / PR state** — current branch, `git log --oneline -10`, and open PRs
-  (`gh pr list`). Note anything in flight that this session interacts with.
+  (`gh pr list`). Note anything in flight that this session interacts with. If
+  any merged PRs are still linked to non-closed tickets, suggest running
+  `/merge-sync` to reconcile before starting.
 
 ### 3. Generate the checklist (TDD-first)
 

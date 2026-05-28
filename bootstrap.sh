@@ -31,12 +31,18 @@ echo "[workflow] .claude/ + .agents/ + CI"
 mkdir -p "$DST/.claude" "$DST/.agents" "$DST/.github/workflows"
 cp -R "$SRC/.claude/skills" "$DST/.claude/"
 cp -R "$SRC/.claude/hooks"  "$DST/.claude/"
-cp "$SRC/.agents/code-review.md" "$SRC/.agents/testing.md" "$DST/.agents/"
+cp -R "$SRC/.claude/bin"    "$DST/.claude/"
+cp "$SRC"/.agents/*.md "$DST/.agents/"
 cp "$SRC/.github/workflows/ci.yml" "$DST/.github/workflows/ci.yml"
 chmod +x "$DST/.claude/skills/ticket/bin/"* \
          "$DST/.claude/skills/session-start/bin/"* \
+         "$DST/.claude/bin/"* \
          "$DST/.claude/hooks/"*.sh 2>/dev/null || true
-say ".claude/skills, .claude/hooks, .agents, .github/workflows/ci.yml installed"
+say ".claude/skills, .claude/hooks, .claude/bin, .agents, .github/workflows/ci.yml installed"
+
+# forge selector — don't clobber an existing choice
+[ -f "$DST/.claude/forge" ] || cp "$SRC/.claude/forge" "$DST/.claude/forge"
+say "forge selector: $(cat "$DST/.claude/forge") (edit .claude/forge to switch github/gitlab)"
 
 # settings.json — don't clobber an existing one
 if [ -f "$DST/.claude/settings.json" ]; then
@@ -48,13 +54,14 @@ else
 fi
 
 # --- data scaffolds (seed only if absent — never clobber your data) ----------
-echo "[data] backlog/ sessions/ .reviews/"
-mkdir -p "$DST/backlog" "$DST/sessions" "$DST/.reviews"
+echo "[data] backlog/ sessions/ .reviews/ .checks/"
+mkdir -p "$DST/backlog" "$DST/sessions" "$DST/.reviews" "$DST/.checks"
 [ -f "$DST/backlog/.next-id" ]   || cp "$SRC/backlog/.next-id"   "$DST/backlog/.next-id"
 [ -f "$DST/sessions/.next-id" ]  || cp "$SRC/sessions/.next-id"  "$DST/sessions/.next-id"
 [ -f "$DST/sessions/README.md" ] || cp "$SRC/sessions/README.md" "$DST/sessions/README.md"
 [ -f "$DST/.reviews/README.md" ] || cp "$SRC/.reviews/README.md" "$DST/.reviews/README.md"
-say "backlog/.next-id, sessions/.next-id, READMEs seeded (existing ones left untouched)"
+[ -f "$DST/.checks/README.md" ]  || cp "$SRC/.checks/README.md"  "$DST/.checks/README.md"
+say "backlog/.next-id, sessions/.next-id, .reviews + .checks READMEs seeded (existing left untouched)"
 
 # --- docs skeleton (seed only if absent) -------------------------------------
 echo "[docs] docs/{decisions,runbooks,learnings} + architecture.md"

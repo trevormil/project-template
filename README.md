@@ -1,13 +1,14 @@
 # project-template
 
-A reusable, self-contained **workflow template** for private GitHub projects.
-Drop it into a new repo and you get a complete, in-repo development loop:
-sessions → tickets → feature branches → PRs → Codex code-review → human merge,
-with a knowledge base, TDD gate, and autonomous/AFK modes — all versioned with
-the code, no external tracker or dashboard.
+A reusable, self-contained **workflow template** for private GitHub *or* GitLab
+projects. Drop it into a new repo and you get a complete, in-repo development
+loop: sessions → tickets → feature branches → PRs/MRs → Codex code-review →
+human merge, with a knowledge base, TDD gate, cadence checks, and autonomous/AFK
+modes — all versioned with the code, no external tracker or dashboard.
 
-Loads on top of the global `~/.claude/CLAUDE.md` (§1–10). Forge is **GitHub**
-(`gh`, "PR"). Merge to `main` is **human-only** (global §8).
+Loads on top of the global `~/.claude/CLAUDE.md` (§1–10). **Forge is per-repo**
+(GitHub `gh`/"PR" or GitLab `glab`/"MR"), resolved by `.claude/bin/forge` —
+switch with `.claude/forge`. Merge to `main` is **human-only** (global §8).
 
 ## Use it
 
@@ -15,9 +16,12 @@ Loads on top of the global `~/.claude/CLAUDE.md` (§1–10). Forge is **GitHub**
 ```bash
 gh repo create <name> --private --template <owner>/project-template --clone
 cd <name>
+echo gitlab > .claude/forge     # only if this repo lives on GitLab (default: github)
 # fill the placeholders in CLAUDE.md, then:
 /session-start "scaffold the project"
 ```
+(GitLab has no `--template` flow — clone/copy the files in and `git remote add`
+your GitLab origin, or use `bootstrap.sh` below.)
 
 **Existing repo** — retrofit with the bootstrap (non-clobbering; writes
 `*.workflow` alongside anything it would overwrite):
@@ -31,22 +35,28 @@ cd <name>
 CLAUDE.md                     project workflow + conventions (fill placeholders)
 bootstrap.sh                  inject the workflow into an existing repo
 .claude/
-  settings.json               deny secrets + gh pr merge; wires the merge hook
+  settings.json               deny secrets + pr/mr merge; wires the merge hook
+  forge                       github | gitlab — the repo's forge selector
+  bin/forge                   resolves the active forge (override > detect)
   hooks/block-main-merge.sh   PreToolUse gate — blocks merge/push to main/master
   skills/
-    ticket/                   in-repo backlog tickets (+ horizon tag, atomic ids)
+    ticket/                   in-repo backlog tickets (+ horizon + hitl tags)
     session-start/            open a session: seed live doc + TDD checklist
     session-end/              close a session: document, clean up, file follow-ups
-    pr-creation/              ticket → branch → PR (gh) → link back to ticket
+    pr-creation/              ticket → branch → PR/MR → link back to ticket
     code-review/              Codex review → in-repo .reviews/ artifacts
+    merge-sync/               after human merge: close tickets + scrub urls
     test-suite/               ad-hoc chat-only test run (the cheap inner loop)
+    check/                    cadence repo inspections → .checks/ (dead-code, …)
     security-scan/            deterministic security floor (CVE/secrets/SAST)
     document/ document-audit/ knowledge base capture + rot check
     notify/                   on-demand AFK Telegram bridge
-    stacked-mr/               autonomous overnight PR stacking
+    stacked-mr/               autonomous overnight PR/MR stacking
 .agents/
+  forge.md                    GitHub/GitLab detection + gh↔glab command mapping
   code-review.md              review contract: schema, six-axis rubric, verdicts
   testing.md                  test-runner detection
+  dead-code.md                example cadence-check spec (+ pattern to copy)
 .github/workflows/ci.yml      format + typecheck + test (+ optional eval gate)
 docs/
   decisions/                  ADRs (append-only; 0001 is the template)
@@ -54,14 +64,16 @@ docs/
   runbooks/  learnings/        ops procedures + non-obvious findings
 backlog/.next-id              ticket counter (tickets land here as NNNN-slug.md)
 sessions/                     live session docs (central state), NNNN-slug/
-.reviews/                     in-repo code-review artifacts, per PR
+.reviews/                     in-repo code-review artifacts, per PR/MR
+.checks/                      in-repo cadence-inspection artifacts, per kind
 ```
 
 ## The loop
 
 ```
 /session-start "<goal>"  →  /ticket  →  feature branch  →  TDD  →
-/pr-creation  →  /code-review (background)  →  <human merges>  →  /session-end
+/pr-creation  →  /code-review (background)  →  <human merges>  →
+/merge-sync  →  /session-end
 ```
 
 See [`CLAUDE.md`](./CLAUDE.md) for the full conventions: the TDD gate, the
@@ -72,9 +84,10 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full conventions: the TDD gate, the
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code) — runs the skills.
-- [`codex`](https://github.com/openai/codex) CLI — `/code-review`, `/test-suite`
-  delegate to it (`-s danger-full-access`).
-- `gh` (authenticated) — PR creation + resolution.
+- [`codex`](https://github.com/openai/codex) CLI — `/code-review`, `/check`,
+  `/test-suite` delegate to it (`-s danger-full-access`).
+- `gh` **or** `glab` (authenticated, matching `.claude/forge`) — PR/MR creation
+  + resolution.
 - `bun` — default toolchain (global §5).
 - `jq` — used by the merge-block hook.
 - Telegram scripts/creds in `~/.claude` (optional) — only for `/notify`.

@@ -21,8 +21,9 @@ Security and architecture are first-class scoring axes alongside correctness.
 ```
 
 `<short_sha>` is the first 7 hex chars of the head commit. `<pr-number>` is the
-GitHub PR number (no host/owner prefix — the artifacts are in the repo they
-describe).
+change number — the GitHub PR number or GitLab MR number (no host/owner prefix;
+the artifacts are in the repo they describe). Forge resolved via
+[`forge.md`](./forge.md).
 
 ## One artifact per reviewed commit
 

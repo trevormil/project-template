@@ -11,14 +11,19 @@ runs `/code-review` manually when ready, usually only at the end after
 iterating, to avoid burning review cycles on every push.
 
 The merge itself is human-only (global CLAUDE.md §8). This skill stops at
-"PR is open" and never crosses that gate.
+"PR/MR is open" and never crosses that gate.
 
-Forge: **GitHub** (`gh` CLI, "PR"). Default branch: `main`.
+**Forge is detected per repo** — GitHub (`gh`, "PR") or GitLab (`glab`, "MR").
+Resolve it with `forge="$(.claude/bin/forge)"` and use the matching CLI +
+terminology; full command mapping in
+[`.agents/forge.md`](../../../.agents/forge.md). Examples below show GitHub;
+swap for `glab` on GitLab repos. Default branch: `main`.
 
 ## Inputs
 
 - `ticket_id` (preferred) — points to `backlog/<id>-<slug>.md` in THIS repo.
-  The skill reads the ticket for acceptance criteria.
+  The skill reads the ticket for acceptance criteria. **One or more** ids — a PR
+  may close several cohesive tickets (batch them; code review is the bottleneck).
 - OR `task_description` — start without a ticket; the skill invokes `/ticket`
   first to file one.
 
@@ -58,7 +63,9 @@ Apply the ticket's changes. Follow:
 - Global `~/.claude/CLAUDE.md` §1–10.
 - TDD: write the failing test first when adding new behavior.
 
-Commit incrementally on the feature branch. Don't push yet.
+Commit incrementally on the feature branch using **Conventional Commits**
+(`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` …), one logical change
+per commit. Don't push yet.
 
 ### 4. Sanity-check before pushing
 
@@ -81,14 +88,18 @@ git push -u origin "$branch"
 The merge-to-main hook (`.claude/hooks/block-main-merge.sh`) allows
 feature-branch pushes; it only blocks main/master targets.
 
-### 6. Open the PR
+### 6. Open the PR/MR
+
+On GitHub use `gh pr create`; on GitLab use `glab mr create --target-branch main
+--source-branch "$branch"` with `--description` instead of `--body` (see
+`.agents/forge.md`). GitHub form:
 
 ```bash
 gh pr create \
   --title "<ticket title>" \
   --base main \
   --body "$(cat <<'EOF'
-Closes #<id> (backlog ticket).
+Closes #<id> (backlog ticket). For a multi-ticket PR: Closes #<a> #<b>.
 
 ## Summary
 <2-3 sentences: what changed and why>
@@ -108,12 +119,13 @@ EOF
 
 Don't pass `--merge` / `--auto` — merging is human-only.
 
-### 7. Link the PR back to the ticket
+### 7. Link the PR back to the ticket(s)
 
-Open `backlog/<id>-*.md`:
+For **each** ticket this PR closes, open `backlog/<id>-*.md`:
 - Add the PR URL to `prs:`.
 - Bump `updated:` to today.
 - Leave `status: in-progress` (NOT `closed`) — only the human closes via merge.
+  After the merge, `/merge-sync` flips these to `closed` and scrubs the url.
 
 ### 8. Hand off to the human
 

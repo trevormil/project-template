@@ -14,6 +14,10 @@ is still human-only).
 Each PR in the stack is still **fully code-reviewed to a passing bar** along the
 way — this is not "skip review", it's "don't wait for a human merge between PRs".
 
+> Forge-agnostic: this doc says "PR" / `gh`, but the stacking model is identical
+> on GitLab — "MR" / `glab mr create --target-branch <parent>` (resolve with
+> `.claude/bin/forge`; mapping in [`.agents/forge.md`](../../../.agents/forge.md)).
+
 ## Invocation
 
 ```
@@ -114,7 +118,8 @@ Stack of N PRs (review bottom-up; merge after review):
 Include each PR url, ticket id, base branch, and latest verdict. Flag any
 `stuck` tickets and any PRs still awaiting a verdict. The human merges
 bottom-up; as each merges, the next PR's base auto-retargets on GitHub (or note
-where a restack is needed).
+where a restack is needed). **After the human finishes merging the batch, run
+`/merge-sync`** to close the merged tickets and scrub their PR urls from `prs:`.
 
 ## Hard rules
 

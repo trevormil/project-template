@@ -10,6 +10,24 @@ and [`docs/architecture.md`](./docs/architecture.md).
 **Status:** <design / building / shipped — one line on where things stand and
 what to pick up next.>
 
+## Operating principles (read first)
+
+Two mindset rules that override convenience everywhere in this workflow:
+
+- **Production-grade, always.** Never assume a codebase is a demo, an
+  assignment, a prototype, or throwaway — treat every repo as if it ships to
+  production at scale. Security, architecture, and tests are first-class on
+  every change, however small. "It's just a demo" is never a reason to cut a
+  corner. (This is why `/code-review` scores at enterprise rigor.)
+- **Don't trust your internal clock.** Your sense of how long things take is
+  calibrated on *human* pace and is wrong for AI work — a task training data
+  calls "a day" is often minutes here. So: (1) never pad scope or skip work
+  because you assume you're short on time; you almost always have more room than
+  it feels. (2) When timing genuinely matters, ground yourself in reality —
+  check the real clock (`date`) and measure actual elapsed time rather than
+  estimating. Don't claim something took / will take a duration you didn't
+  measure.
+
 ## [1] How we work here
 
 The loop, in order. Everything is tracked **in this repo** — no external tracker,
@@ -27,9 +45,11 @@ no central dashboard.
 ```
 
 Supporting skills: `/test-suite` (cheap chat-only test run between commits),
-`/security-scan` (deterministic security floor), `/document` + `/document-audit`
-(knowledge base), `/notify` (on-demand AFK Telegram bridge), `/stacked-mr`
-(autonomous overnight PR stacking).
+`/security-scan` (deterministic security floor), `/check` (cadence repo
+inspections — dead-code etc.), `/merge-sync` (close tickets + scrub urls after
+the human merges), `/document` + `/document-audit` (knowledge base), `/notify`
+(on-demand AFK Telegram bridge), `/stacked-mr` (autonomous overnight PR
+stacking).
 
 ## [2] TDD gate (non-negotiable)
 
@@ -75,14 +95,32 @@ browser/OAuth flow, a product call). Filing one sends a Telegram ping describing
 the action; list them with `bin/tickets hitl`. HITL tickets carry an
 `## Action needed` section.
 
-## [5] Branches & PRs (GitHub)
+## [5] Branches, PRs/MRs & the forge
 
-Forge is **GitHub** (`gh` CLI, "PR", `--base main`). Always work on a feature
-branch; **never commit or push to `main`** (global §8 — enforced by
-`.claude/hooks/block-main-merge.sh`). `/pr-creation` opens the PR and links its
-url into the ticket's `prs:`; the final merge is human-only.
+**Forge is per-repo — GitHub or GitLab.** Resolve with `.claude/bin/forge`
+(prints `github` or `gitlab`; reads the `.claude/forge` override, else detects
+from the origin remote). Use the matching CLI + terminology — `gh`/"PR" or
+`glab`/"MR"; full command mapping in
+[`.agents/forge.md`](./.agents/forge.md). To switch a repo's forge, write
+`github` or `gitlab` to `.claude/forge` (required for self-hosted GitLab, whose
+host the detector can't infer).
 
-## [6] Code review
+Always work on a feature branch; **never commit or push to `main`** (global §8 —
+enforced by `.claude/hooks/block-main-merge.sh`). The final merge is human-only.
+
+- **Commits:** [Conventional Commits](https://www.conventionalcommits.org)
+  (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` …). One logical
+  change per commit; subject in the imperative, ≤ ~70 chars.
+- **One PR can close multiple tickets.** A ticket is not 1:1 with a PR — batch
+  cohesive tickets into one reviewable PR (code review is the throughput
+  bottleneck). The PR body lists `Closes #<a> #<b>`; link the PR url into **each**
+  ticket's `prs:`.
+- **After merge, reconcile.** Since the human merges, run **`/merge-sync`**
+  afterward (especially after a `/stacked-mr` batch) to set the merged tickets
+  `closed` and scrub the merged PR urls from `prs:` (the list is for *active*
+  tracking; git history keeps the trail).
+
+## [6] Code review & checks
 
 `/code-review` delegates to Codex and writes one combined review+tests artifact
 **in-repo** under `.reviews/<pr>/<sha>.md` (+ `findings.json` / `suggestions.json`).
@@ -93,6 +131,12 @@ Contract: [`.agents/code-review.md`](./.agents/code-review.md).
 - **Run it in the background.** Review is the most common dev-speed bottleneck
   (~4 min). Fire it async and go do other useful work; don't sit blocked. The
   reviewer can also file out-of-scope follow-ups as `horizon: future` tickets.
+
+**Cadence checks** are the other half: `/check <kind>` runs a *repo-level*
+inspection (dead-code, dep-drift) on the whole tree, on a cadence — not per
+commit — and writes a dated artifact to `.checks/<kind>/<sha>.md`. Each kind is
+a contract at `.agents/<kind>.md` (copy `dead-code.md` to add one). Checks are
+**advisory** — they report; cleanup becomes a ticket, never an auto-edit.
 
 ## [7] Documentation & knowledge base
 

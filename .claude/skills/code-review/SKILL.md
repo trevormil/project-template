@@ -11,8 +11,9 @@ severity-based body rules, anti-slop checklist, and verdict logic are owned by
 the in-repo contract — Codex **reads [`.agents/code-review.md`](../../../.agents/code-review.md)
 before scoring** (and `.agents/testing.md` for runner detection).
 
-Forge: **GitHub** (`gh`). Artifacts are **in-repo** — no central dashboard, no
-harness phone-home.
+Forge: **GitHub or GitLab**, detected per repo (`.claude/bin/forge`; command
+mapping in [`.agents/forge.md`](../../../.agents/forge.md)). Artifacts are
+**in-repo** — no central dashboard, no harness phone-home.
 
 ## Delegate to Codex
 
@@ -40,7 +41,7 @@ genuinely nothing else to advance.
 Invoke via `Bash` with `run_in_background: true`:
 
 ```bash
-codex exec -s danger-full-access -C "$PWD" "Review GitHub PR <PR-URL> at its current head commit. Follow the review contract in .agents/code-review.md in this repo exactly: run the detected test suite first as the gate, and if tests are not green stop at a blocked test-gate artifact. Otherwise score the six axes, compose findings with copy-pasteable fix prompts, and pick a verdict. Write the combined artifact to .reviews/<pr-number>/<short-sha>.md, and update .reviews/<pr-number>/findings.json and .reviews/<pr-number>/suggestions.json per the contract. If you spot real work that is out of scope for this PR (latent bugs elsewhere, worthwhile refactors, missing test surfaces, follow-up extensions), file a backlog ticket using .claude/skills/ticket: check bin/tickets open for duplicates, allocate an id with bin/next-ticket-id, write backlog/NNNN-slug.md per EXAMPLE.md, and reference the ticket id in the artifact Suggestions section. Use gh to resolve the PR number, head SHA, base, and diff."
+codex exec -s danger-full-access -C "$PWD" "Review the PR/MR at <URL> at its current head commit. The forge is GitHub or GitLab: run .claude/bin/forge to find which, and use gh (GitHub) or glab (GitLab) per .agents/forge.md to resolve the change number, head SHA, base, and diff. Follow the review contract in .agents/code-review.md in this repo exactly: run the detected test suite first as the gate, and if tests are not green stop at a blocked test-gate artifact. Otherwise score the six axes, compose findings with copy-pasteable fix prompts, and pick a verdict. Write the combined artifact to .reviews/<number>/<short-sha>.md, and update .reviews/<number>/findings.json and .reviews/<number>/suggestions.json per the contract. If you spot real work that is out of scope for this change (latent bugs elsewhere, worthwhile refactors, missing test surfaces, follow-up extensions), file a backlog ticket using .claude/skills/ticket: check bin/tickets open for duplicates, allocate an id with bin/next-ticket-id, write backlog/NNNN-slug.md per EXAMPLE.md, and reference the ticket id in the artifact Suggestions section."
 ```
 
 `-s danger-full-access` is required: the test gate frequently binds loopback
