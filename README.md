@@ -32,6 +32,25 @@ your GitLab origin, or use `bootstrap.sh` below.)
 ./bootstrap.sh /path/to/your-repo
 ```
 
+## Skills & global setup
+
+The skills in `.claude/skills/` are **project-scoped by design** — Claude Code
+auto-loads them when you work in a repo that has them, and they reference this
+repo's own `.agents/` contracts via relative paths (`../../../.agents/…`). So:
+
+- **A scaffolded repo needs no global-skills setup.** The workflow is bundled
+  and self-contained: `/code-review`, `/check`, and `/test-suite` delegate to
+  Codex with self-contained prompts (they do **not** call Codex's global slash
+  commands), so they work as long as `claude` + `codex` are installed.
+- **Don't symlink these into `~/.claude/skills` / `~/.codex/skills`** — the
+  relative `.agents/` refs would resolve to `~/.agents/` and break. Keep them
+  per-repo.
+- **Existing repo?** Drop the workflow in with `./bootstrap.sh /path/to/repo`
+  (non-clobbering) — that's the supported "set it up" path.
+- **Let Claude do it.** You already have a Claude instance: point it at this repo
+  and ask it to run `bootstrap.sh` against your target, then walk you through CLI
+  auth (`gh`/`glab`) and optional Telegram.
+
 ## What's inside
 
 ```
