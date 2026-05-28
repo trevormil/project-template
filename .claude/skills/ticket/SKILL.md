@@ -183,3 +183,11 @@ That's it. The first `/ticket` (or any `bin/next-ticket-id` call) bootstraps
 `backlog/` + `.next-id` at the new repo's root. No external service, no
 dashboard, no `flock`, no per-repo config. Commit `backlog/` (tickets +
 `.next-id`) so the tracker travels with the code.
+
+## Activity
+
+After the ticket file is written, emit a feed event:
+
+```bash
+.claude/bin/activity ticket-filed "Ticket filed · #<id>" "<title>"
+```

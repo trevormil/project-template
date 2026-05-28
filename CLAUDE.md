@@ -228,3 +228,19 @@ part. Short tickets don't need it.
 <!-- The stuff that's unique to THIS project: domain context, substrate,
      external services, key runbooks, "don't re-derive" facts, gotchas. Add
      subsections [12.1], [12.2], … as needed. -->
+
+## [13] Activity feed
+
+Surface every meaningful workflow milestone to the shared **activity feed** so
+it shows up live (and as a desktop notification) in Gauntlet Terminal. One call,
+at the moment it happens:
+
+```bash
+.claude/bin/activity <kind> "<title>" ["<detail>"]
+```
+
+`kind` ∈ `ticket-filed` · `pr-verdict` · `session-start` · `session-end` ·
+`agent-run` · `info` · `error`. It's exit-0 safe (never breaks the workflow) and
+derives repo context from git. **Engrain it**: any skill that hits a milestone —
+filing a ticket, finishing a review, opening a PR/MR, starting/ending a session,
+running an agent — emits one event. New skills follow the same rule.

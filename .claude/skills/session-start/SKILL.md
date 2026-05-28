@@ -118,3 +118,11 @@ wait, if the user only wanted the session seeded).
 - Don't start writing code before the session doc exists — the doc is the
   central state, seed it first.
 - Don't dump the entire backlog into Context — only what's relevant to the goal.
+
+## Activity
+
+After seeding the session doc, emit a feed event:
+
+```bash
+.claude/bin/activity session-start "Session · <goal>" "<slug>"
+```

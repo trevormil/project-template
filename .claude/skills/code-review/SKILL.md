@@ -94,3 +94,11 @@ test gate, findings.json diff) so are last-resort. If you do, follow
   — re-run `/test-suite` to confirm green, then `/code-review` to re-score.
 - **Not standalone test-run.** Use `/test-suite` for ad-hoc runs that print to
   chat without writing an artifact.
+
+## Activity
+
+After the review artifact is written, emit a feed event:
+
+```bash
+.claude/bin/activity pr-verdict "Review · <verdict> · !<iid>" "<repo> @ <short_sha>"
+```

@@ -156,3 +156,11 @@ documented (paths), and the top follow-ups for next session.
 - Don't batch-dump a wall of suggested tickets — one at a time, confirm each.
 - Don't leave the session `active` with stub sections — finish or mark
   `abandoned` with a one-line why.
+
+## Activity
+
+After closing the session doc, emit a feed event:
+
+```bash
+.claude/bin/activity session-end "Session closed · <slug>" "<one-line summary>"
+```

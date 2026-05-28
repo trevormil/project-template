@@ -144,3 +144,11 @@ learning, mention it ("might be worth `/document`-ing X") but don't auto-invoke.
    proceeding — the TDD gate can't function without one.
 4. If the repo has no `CLAUDE.md`, flag it and propose creating one before
    writing code — the conformance check needs something to compare against.
+
+## Activity
+
+After the PR/MR is opened, emit a feed event:
+
+```bash
+.claude/bin/activity pr-verdict "PR opened · !<iid>" "<title>"
+```
