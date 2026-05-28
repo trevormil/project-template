@@ -60,7 +60,7 @@ For solo work, a plain feature branch in-place is fine.
 
 Apply the ticket's changes. Follow:
 - This repo's `CLAUDE.md` (root + nested in folders touched).
-- Global `~/.claude/CLAUDE.md` §1–10.
+- Global `~/.claude/CLAUDE.md` §1–11.
 - TDD: write the failing test first when adding new behavior.
 
 Commit incrementally on the feature branch using **Conventional Commits**

@@ -1,7 +1,7 @@
 # CLAUDE.md — <PROJECT NAME>
 
 <!-- Fill the placeholders below. This file is project-specific guidance that
-     loads ON TOP of the global ~/.claude/CLAUDE.md (§1–10). Don't restate the
+     loads ON TOP of the global ~/.claude/CLAUDE.md (§1–11). Don't restate the
      global rules here — reference them as "global §N". Keep this lean. -->
 
 <One-line description of what this project is.> See [`README.md`](./README.md)

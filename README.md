@@ -6,7 +6,10 @@ loop: sessions → tickets → feature branches → PRs/MRs → Codex code-revie
 human merge, with a knowledge base, TDD gate, cadence checks, and autonomous/AFK
 modes — all versioned with the code, no external tracker or dashboard.
 
-Loads on top of the global `~/.claude/CLAUDE.md` (§1–10). **Forge is per-repo**
+Loads on top of the global `~/.claude/CLAUDE.md` (§1–11). This repo's
+`.claude/skills/` **override** any same-named global skill (project skills win),
+so a bootstrapped repo gets the forge-agnostic, in-repo behavior even if your
+global skills are flavored differently. **Forge is per-repo**
 (GitHub `gh`/"PR" or GitLab `glab`/"MR"), resolved by `.claude/bin/forge` —
 switch with `.claude/forge`. Merge to `main` is **human-only** (global §8).
 
