@@ -38,6 +38,7 @@ bootstrap.sh                  inject the workflow into an existing repo
   settings.json               deny secrets + pr/mr merge; wires the merge hook
   forge                       github | gitlab — the repo's forge selector
   bin/forge                   resolves the active forge (override > detect)
+  bin/status                  prints the live human-facing status snapshot
   hooks/block-main-merge.sh   PreToolUse gate — blocks merge/push to main/master
   skills/
     ticket/                   in-repo backlog tickets (+ horizon + hitl tags)
@@ -52,12 +53,17 @@ bootstrap.sh                  inject the workflow into an existing repo
     document/ document-audit/ knowledge base capture + rot check
     notify/                   on-demand AFK Telegram bridge
     stacked-mr/               autonomous overnight PR/MR stacking
+    terminal-widget/          add repo-specific Gauntlet Terminal sidebar widgets
 .agents/
   forge.md                    GitHub/GitLab detection + gh↔glab command mapping
   code-review.md              review contract: schema, six-axis rubric, verdicts
   testing.md                  test-runner detection
   dead-code.md                example cadence-check spec (+ pattern to copy)
 .github/workflows/ci.yml      format + typecheck + test (+ optional eval gate)
+.github/PULL_REQUEST_TEMPLATE.md  + .gitlab/merge_request_templates/  PR/MR checklist
+.editorconfig                 uniform whitespace across editors
+.gauntlet-terminal/widgets.json   repo-specific terminal sidebar widgets
+.status.md                    live human status snapshot (gitignored, generated)
 docs/
   decisions/                  ADRs (append-only; 0001 is the template)
   architecture.md             evergreen system overview (edit in place)

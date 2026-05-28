@@ -27,6 +27,12 @@ Two mindset rules that override convenience everywhere in this workflow:
   check the real clock (`date`) and measure actual elapsed time rather than
   estimating. Don't claim something took / will take a duration you didn't
   measure.
+- **Code is cheap; maintenance is not.** Generating code is nearly free now, so
+  the bottleneck (and the risk) is sprawl — features, abstractions, and config
+  that accrete faster than anyone can maintain, secure, or reason about. Resist
+  the "Winchester House" failure mode: every addition must earn its keep
+  (global §2). Prefer deleting to adding; the smallest thing that satisfies the
+  ticket wins.
 
 ## [1] How we work here
 
@@ -92,6 +98,16 @@ outcomes, follow-ups, documentation. Exactly **one session is `active`** at a
 time. Schema: [`.claude/skills/session-start/SESSION_EXAMPLE.md`](./.claude/skills/session-start/SESSION_EXAMPLE.md).
 Start with `/session-start`, close with `/session-end` (which is a real
 15–30 min closing process, not a quick wrap).
+
+**Live status for the human (`.status.md`).** Session docs are the *committed,
+durable* state; `.status.md` (gitignored) is the *ephemeral* at-a-glance
+snapshot for the developer **managing agents** in this repo — what needs you
+(HITL/blockers), backlog counts, active session, recent review verdicts.
+Regenerate it deterministically from local state any time with
+`.claude/bin/status > .status.md`; agents refresh it at checkpoints
+(session start/end, after opening/merging PRs, when something starts needing
+you). It can also feed a Gauntlet Terminal sidebar widget (see
+`/terminal-widget`).
 
 ## [4] Tickets
 

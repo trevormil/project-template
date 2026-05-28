@@ -131,8 +131,9 @@ paths) and what still needs documenting (as a follow-up).
 
 Set `status: closed`, `ended:` now. Confirm every anchored body section
 (`[1]`–`[8]`) is filled (no stub headings left) and any new subsections you
-added carry `[N.M]` anchors. Commit the session doc + any doc/cleanup changes on
-a feature branch (never main).
+added carry `[N.M]` anchors. Refresh the live snapshot
+(`.claude/bin/status > .status.md`) so it shows no active session. Commit the
+session doc + any doc/cleanup changes on a feature branch (never main).
 
 ### 10. Summarize
 

@@ -348,7 +348,15 @@ focused; route everything else to the backlog. Don't file duplicates.
 
 ## Things to avoid
 
-Padding with low-confidence style nits; findings without file:line; "would be
-nice" framed as a finding (put it in `suggestions.json`, or file a ticket if it
-needs real work); re-flagging issues already raised at an earlier SHA; filing
-duplicate tickets; approving without test verification (**never**).
+**Don't manufacture findings.** A reviewer prompted to find gaps will report
+some even when the work is sound — resist it. A clean PR legitimately has **zero
+findings**; "no issues found + positive evidence it's safe" is the correct
+result, not a failure to look hard enough. Scope findings to correctness,
+security, architecture, and stated requirements; preference-level observations
+go to `suggestions.json`, never findings. The goal is an accurate review, not a
+long one.
+
+Also avoid: padding with low-confidence style nits; findings without file:line;
+"would be nice" framed as a finding (put it in `suggestions.json`, or file a
+ticket if it needs real work); re-flagging issues already raised at an earlier
+SHA; filing duplicate tickets; approving without test verification (**never**).

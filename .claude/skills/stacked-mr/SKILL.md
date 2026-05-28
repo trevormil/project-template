@@ -89,7 +89,10 @@ Reviews complete asynchronously. When a `/code-review` notification arrives:
   never to main/master.)
 
 Keep a running ledger (in the active session doc, or a scratch note) of every
-PR, its branch, its parent, and its latest review verdict.
+PR, its branch, its parent, and its latest review verdict. **Refresh
+`.claude/bin/status > .status.md` after each slice** so a human checking in
+overnight sees current progress + anything that started needing them, without
+reading the transcript.
 
 ## Stop conditions
 

@@ -44,6 +44,15 @@ say ".claude/skills, .claude/hooks, .claude/bin, .agents, .github/workflows/ci.y
 [ -f "$DST/.claude/forge" ] || cp "$SRC/.claude/forge" "$DST/.claude/forge"
 say "forge selector: $(cat "$DST/.claude/forge") (edit .claude/forge to switch github/gitlab)"
 
+# editor config + PR/MR templates — don't clobber existing project ones
+[ -f "$DST/.editorconfig" ] || cp "$SRC/.editorconfig" "$DST/.editorconfig"
+mkdir -p "$DST/.github" "$DST/.gitlab/merge_request_templates"
+[ -f "$DST/.github/PULL_REQUEST_TEMPLATE.md" ] || \
+  cp "$SRC/.github/PULL_REQUEST_TEMPLATE.md" "$DST/.github/PULL_REQUEST_TEMPLATE.md"
+[ -f "$DST/.gitlab/merge_request_templates/Default.md" ] || \
+  cp "$SRC/.gitlab/merge_request_templates/Default.md" "$DST/.gitlab/merge_request_templates/Default.md"
+say ".editorconfig + PR/MR templates seeded (existing left untouched)"
+
 # settings.json — don't clobber an existing one
 if [ -f "$DST/.claude/settings.json" ]; then
   cp "$SRC/.claude/settings.json" "$DST/.claude/settings.workflow.json"
@@ -61,7 +70,10 @@ mkdir -p "$DST/backlog" "$DST/sessions" "$DST/.reviews" "$DST/.checks"
 [ -f "$DST/sessions/README.md" ] || cp "$SRC/sessions/README.md" "$DST/sessions/README.md"
 [ -f "$DST/.reviews/README.md" ] || cp "$SRC/.reviews/README.md" "$DST/.reviews/README.md"
 [ -f "$DST/.checks/README.md" ]  || cp "$SRC/.checks/README.md"  "$DST/.checks/README.md"
-say "backlog/.next-id, sessions/.next-id, .reviews + .checks READMEs seeded (existing left untouched)"
+mkdir -p "$DST/.gauntlet-terminal"
+[ -f "$DST/.gauntlet-terminal/widgets.json" ] || \
+  cp "$SRC/.gauntlet-terminal/widgets.json" "$DST/.gauntlet-terminal/widgets.json"
+say "backlog/.next-id, sessions/.next-id, .reviews + .checks READMEs, terminal widgets seeded (existing left untouched)"
 
 # --- docs skeleton (seed only if absent) -------------------------------------
 echo "[docs] docs/{decisions,runbooks,learnings} + architecture.md"
@@ -70,6 +82,8 @@ mkdir -p "$DST/docs/decisions" "$DST/docs/runbooks" "$DST/docs/learnings"
 [ -f "$DST/docs/decisions/0001-record-architecture-decisions.md" ] || \
   cp "$SRC/docs/decisions/0001-record-architecture-decisions.md" "$DST/docs/decisions/"
 [ -f "$DST/docs/runbooks/README.md" ]  || cp "$SRC/docs/runbooks/README.md"  "$DST/docs/runbooks/README.md"
+[ -f "$DST/docs/runbooks/branch-protection.md" ] || \
+  cp "$SRC/docs/runbooks/branch-protection.md" "$DST/docs/runbooks/branch-protection.md"
 [ -f "$DST/docs/learnings/README.md" ] || cp "$SRC/docs/learnings/README.md" "$DST/docs/learnings/README.md"
 say "docs skeleton seeded (existing docs left untouched)"
 
@@ -85,7 +99,7 @@ fi
 # --- .gitignore — append our entries if missing ------------------------------
 echo "[gitignore] appending workflow entries if missing"
 touch "$DST/.gitignore"
-for line in "backlog/.next-id.lock" "sessions/.next-id.lock"; do
+for line in "backlog/.next-id.lock" "sessions/.next-id.lock" ".status.md"; do
   grep -qxF "$line" "$DST/.gitignore" || printf '%s\n' "$line" >> "$DST/.gitignore"
 done
 say ".gitignore lock-dir entries ensured"

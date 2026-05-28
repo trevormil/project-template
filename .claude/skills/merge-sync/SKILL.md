@@ -52,8 +52,9 @@ Leave tickets whose PRs are still open/closed-unmerged untouched.
 ### 4. Report
 
 List what changed: which tickets were closed, which PR URLs were scrubbed, and
-any ticket left open because not all its PRs merged. Don't auto-`/document` or
-file new tickets — this is pure reconciliation.
+any ticket left open because not all its PRs merged. Refresh the live snapshot
+(`.claude/bin/status > .status.md`) to reflect the closed tickets. Don't
+auto-`/document` or file new tickets — this is pure reconciliation.
 
 ## When to run
 

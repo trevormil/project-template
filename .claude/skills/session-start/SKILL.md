@@ -90,7 +90,10 @@ Create one task per checklist item via `TaskCreate` so progress is tracked live
 in the session. Keep the session doc's checkboxes and the task list in sync as
 work proceeds.
 
-### 6. Announce
+### 6. Refresh the live status + announce
+
+Refresh the human-facing snapshot: `.claude/bin/status > .status.md` (gitignored;
+the at-a-glance state for whoever is managing agents in this repo).
 
 Point the user at `sessions/<id>-<slug>/session.md` and give a tight summary:
 the goal, the in-scope tickets, the key context pointers (notable research /
