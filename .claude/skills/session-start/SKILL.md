@@ -72,9 +72,11 @@ Keep it realistic for one session; defer the rest to Follow-ups.
 ### 4. Write the session doc
 
 Write `sessions/<id>-<slug>/session.md` using the SESSION_EXAMPLE schema.
-Populate frontmatter (`anchor: SES-<zero-padded id>`, `tickets`,
-`related_research`, `related_docs`, `prior_sessions`, `branches: []`,
-`prs: []`, `status: active`, `started:` now, `ended: null`) and the **[1] Goal**,
+Populate **all** frontmatter fields — `id`, `slug`, `anchor: SES-<zero-padded
+id>`, `title` (a short headline from the goal — the listers display it), `status:
+active`, `started:` now, `ended: null`, `goal` (verbatim), `tickets`,
+`branches: []`, `prs: []`, `related_research`, `related_docs`, `prior_sessions`
+— then the **[1] Goal**,
 **[2] Context & pointers**, and **[3] Checklist** sections. Leave [4]–[8] as
 stubs for the session and `/session-end` to fill. **Anchor every heading**
 (`[N]` / `[N.M]`) per the anchoring convention so the doc stays greppable as it
@@ -86,9 +88,10 @@ active session, surface it and ask whether to close it first (it likely needs
 
 ### 5. Mirror the checklist into tasks
 
-Create one task per checklist item via `TaskCreate` so progress is tracked live
-in the session. Keep the session doc's checkboxes and the task list in sync as
-work proceeds.
+If the task tool is available, create one task per checklist item via
+`TaskCreate` so progress is tracked live in the session, and keep the session
+doc's checkboxes and the task list in sync as work proceeds. (If it isn't, the
+session doc's `[3] Checklist` remains the source of truth — no-op this step.)
 
 ### 6. Refresh the live status + announce
 

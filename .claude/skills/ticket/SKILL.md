@@ -171,7 +171,9 @@ Edit the ticket file directly:
 
 ## Porting to a new repo (composability)
 
-The entire system is this one folder. To add it to another repo:
+The entire system is this one folder. If you bootstrapped from the workflow
+template, `bootstrap.sh` already installed it (and gitignored the lock) — skip
+this section. To add **just this skill** standalone to a non-template repo:
 
 1. Copy `.claude/skills/ticket/` into the target repo (scripts included).
 2. Ensure the scripts are executable: `chmod +x .claude/skills/ticket/bin/*`.

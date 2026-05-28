@@ -54,6 +54,8 @@ Run directly in Claude only if `codex` is unavailable or the user asks.
    follow-up `/ticket` (usually `horizon: next` / `future`) → PR.
 2. **Cadence, not per-commit.** Don't wire `/check` into CI as a blocking gate;
    it's a standing-hygiene scan, not a PR gate. (Use `/code-review` for gates.)
+   **No scheduler ships with the template** — run it on demand, or add a host
+   cron / dedicated scheduled CI job yourself if you want a fixed cadence.
 3. **One run per invocation.** Flaky/partial results are reported honestly, not
    retried to green.
 

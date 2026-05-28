@@ -246,6 +246,12 @@ is `null` and excluded from the min.
 
 ## Security checklist (Security axis)
 
+**Run the deterministic floor first.** On the green-tests path, run `/security-scan`
+in diff mode (dependency CVE audit; optional gitleaks secret scan + semgrep SAST —
+see `.claude/skills/security-scan`). Take the **lower** of its recommended Security
+score and your manual read below; any leaked secret is an automatic critical →
+`blocked`. Then apply the checklist:
+
 Each gap knocks Security 10–40 by severity. Input validation at every boundary
 (zod for requests/env/file/LLM output; watch SQLi, XSS, command injection,
 SSRF, path traversal, ReDoS). Authentication on every protected endpoint.
