@@ -41,7 +41,7 @@ creates `backlog/` + `.next-id` if missing. Both scripts must be executable
 Pick the operation from what the user asked:
 
 - **Create** ("file a ticket", "/ticket <desc>", describes trackable work) → §Create
-- **List** ("what's open", "show tickets", "/ticket list", "future ideas") → run `bin/tickets [status] [priority] [horizon]`
+- **List** ("what's open", "show tickets", "/ticket list", "future ideas", "what needs me") → run `bin/tickets [status] [priority] [horizon] [hitl]`
 - **Update / close** ("close #42", "mark 0042 in-progress", "link the MR") → §Update
 
 ---
@@ -59,6 +59,10 @@ Infer from context; ask once only if genuinely unclear:
   `now` = current scope, `next` = soon, `future` = extension / out-of-scope idea.
   Default `now`. Tickets filed by `/code-review` or `/session-end` as follow-ups
   are usually `future` (or `next` if they should be tackled soon).
+- **HITL** — `true` | `false` (default `false`). Set `true` when the ticket needs
+  a manual human action the agent can't do (approve a merge, provision creds, a
+  browser/OAuth flow, sign something, a product decision). HITL tickets get an
+  `## Action needed` body section and trigger a Telegram ping on filing (step 5).
 - **Source** — `manual`, `audit`, `feedback`, an agent name (e.g. `code-review`), or a ref.
 - **Refs** (optional) — plan unit IDs (`U10`), ADRs (`ADR-0002`), or doc paths this ticket advances.
 
@@ -81,6 +85,7 @@ title: "<title>"
 status: open
 priority: <critical|high|medium|low>
 horizon: <now|next|future>
+hitl: <true|false>
 type: <bug|feature|security|docs|dx|testing|ux|performance>
 source: <where it came from>
 created: <YYYY-MM-DD>
@@ -105,9 +110,28 @@ Body (suggested; prose goes **after** the closing `---`):
 
 ## Repro
 <Bugs only: steps to reproduce.>
+
+## Action needed
+<HITL tickets only: the exact manual step the human must take, with any links
+(PR url, console URL) and the decision/options if it's a judgment call. This is
+what gets sent to Telegram.>
 ```
 
-### 4. Confirm and stop
+### 4. If HITL, notify the human
+
+When `hitl: true`, send a Telegram ping so the human knows there's an action
+waiting (depends on the machine-level telegram setup — see `/notify`; if it's
+not present, just say so and continue):
+
+```bash
+~/.claude/bin/telegram-notify.sh --kind=question \
+  "HITL ticket #<id>: <title>. Action needed: <the manual step + any link/options>."
+```
+
+Use `--kind=question` for decisions, `--kind=blocked` if work is stuck until the
+human acts. Keep it phone-readable (lead with the action; include the url).
+
+### 5. Confirm and stop
 
 Show the created path. Don't auto-start the work unless asked.
 

@@ -4,6 +4,7 @@ title: "Example ticket — copy this format for new tickets"
 status: open
 priority: medium
 horizon: now
+hitl: false
 type: feature
 source: manual
 created: 2026-05-26
@@ -28,6 +29,13 @@ id makes it inert). Real tickets live at `backlog/NNNN-kebab-slug.md`.
   and `/session-end` park follow-up ideas and extensions. Lets you filter
   "do now" vs "someday" at a glance even when priorities are similar. Default
   `now`.
+- `hitl` — `true` | `false` (default `false`). **Human-in-the-loop**: the ticket
+  requires a manual action only the human can take (approve a merge, provision
+  credentials, click through a browser/OAuth flow, sign something, make a product
+  call). When a HITL ticket is filed, `/ticket` sends a Telegram ping describing
+  the action needed (depends on the machine-level telegram setup — see `/notify`).
+  HITL tickets should carry an `## Action needed` body section. Filter with
+  `bin/tickets hitl`.
 - `type` — `bug` | `feature` | `security` | `docs` | `dx` | `testing` | `ux` | `performance`
 - `source` — where it came from: `manual`, `audit`, `feedback`, an agent name (e.g. `code-review`), or a ref.
 - `created` / `updated` — ISO dates (`YYYY-MM-DD`).

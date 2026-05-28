@@ -69,6 +69,12 @@ it's the scope/timeline lens. `future` is where `/code-review` and `/session-end
 park out-of-scope extensions and ideas, so the backlog separates "do now" from
 "someday" at a glance: `bin/tickets future`.
 
+The **`hitl`** flag (`true` | `false`) marks **human-in-the-loop** tickets — work
+that needs a manual action only you can take (approve a merge, provision creds, a
+browser/OAuth flow, a product call). Filing one sends a Telegram ping describing
+the action; list them with `bin/tickets hitl`. HITL tickets carry an
+`## Action needed` section.
+
 ## [5] Branches & PRs (GitHub)
 
 Forge is **GitHub** (`gh` CLI, "PR", `--base main`). Always work on a feature
