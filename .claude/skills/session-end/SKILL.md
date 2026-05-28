@@ -49,8 +49,17 @@ Fill the session doc:
 This workflow is TDD-first — verify it held:
 - Every behavior change shipped this session has a corresponding test. Run
   `/test-suite` to confirm green at HEAD.
-- Any behavior added **without** a test is a gap → file a follow-up `/ticket`
-  (testing type) and note it under Follow-ups. Do not paper over it.
+- **Tests are adversarial, not rigged.** Spot-check that the session's new tests
+  actually pin meaningful behavior (not tautologies, weak assertions, or
+  over-mocking that would pass even if the feature were broken). A rigged test is
+  a gap, not coverage — see `.agents/testing.md` "Test quality".
+- **Features are wired (tests passing ≠ shipped).** Each feature shipped this
+  session is reachable from a real production entry point (route/CLI/job/UI/
+  export/ABI), ideally proven by an automated e2e/integration test — not just
+  unit-passing. A symbol reachable only from tests is unwired.
+- Any behavior added **without** a (meaningful) test, or shipped **unwired**, is
+  a gap → file a follow-up `/ticket` (testing type) and note it under
+  Follow-ups. Do not paper over it.
 
 ### 4. Cleanup pass
 

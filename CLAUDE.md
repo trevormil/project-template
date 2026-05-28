@@ -53,9 +53,26 @@ stacking).
 
 ## [2] TDD gate (non-negotiable)
 
-Every behavior change is **test-first**: write the failing test, watch it fail,
-then write the code to make it pass (global §4). This is enforced socially and
-mechanically:
+Every behavior change is **test-first**: write the failing test, watch it fail
+*for the right reason*, then write the code to make it pass (global §4).
+
+Two rules that make TDD real rather than theater:
+
+- **Review the test before you implement.** Once the RED test is written and
+  before any production code, confirm it actually pins the ticket's acceptance
+  criteria — the test is the spec. A wrong/weak test locks in the wrong
+  behavior.
+- **Be adversarial — never write a test just to go green.** A test rigged to
+  pass is the *opposite* of the goal: it manufactures false confidence. No
+  tautologies, no asserting the implementation's current output back at itself,
+  no over-mocking the unit under test, no asserting trivia. Tests must assert
+  *meaningful* behavior — real inputs/outputs, edge cases, and failure modes —
+  and would catch a genuine regression. A green suite of weak tests is worse
+  than no tests. **Automated e2e/integration tests** (Playwright, API/contract
+  tests) are first-class here: they prove the feature is actually wired and
+  stays correct end-to-end, not just that a function returns a value.
+
+Enforced socially and mechanically:
 
 - `/session-start` seeds checklists as "write failing test for X" *before*
   "implement X".

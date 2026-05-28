@@ -274,6 +274,16 @@ API changes backwards compatible (version if breaking). Service boundaries
 respected. Observability at meaningful boundaries. A high-confidence regression
 or scaling break is **high** or **critical**; stylistic nits stay **low** or drop.
 
+**Reachability / wiring (tests passing ≠ shipped).** New behavior must be
+reachable from a real **production entry point** — HTTP route, CLI command,
+scheduled job/worker, UI event handler, exported package API, or contract
+selector/ABI — not only from its own tests. Trace the call chain entry-point →
+symbol. A symbol referenced **only** by tests/fixtures is **unwired**: the suite
+is green but the feature doesn't run in production. New code the diff adds but
+never wires to an entry point is a **high**-severity finding. The durable proof
+of wiring is an **automated e2e/integration test** that exercises the real entry
+point (see [`testing.md`](./testing.md)) — prefer that over a static trace alone.
+
 ## Anti-slop checklist (Quality axis)
 
 Each knocks Quality 5–15: speculative flexibility (config nothing sets,
