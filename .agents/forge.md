@@ -16,7 +16,7 @@ forge="$("$(git rev-parse --show-toplevel)/.claude/bin/forge")"
 Resolution order (`.claude/bin/forge`):
 1. **Explicit override** — `.claude/forge` file containing `github` or `gitlab`
    (the reliable choice, and required for self-hosted GitLab whose host doesn't
-   contain "gitlab", e.g. `labs.gauntletai.com`).
+   contain "gitlab", e.g. `git.example.com`).
 2. **`FORGE` env var**, if set.
 3. **Auto-detect** from `git remote get-url origin` (`github.com` → github;
    a `*gitlab*` host → gitlab).
