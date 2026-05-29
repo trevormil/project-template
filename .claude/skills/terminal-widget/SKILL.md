@@ -1,15 +1,15 @@
 ---
 name: terminal-widget
-description: "Add or edit repo-specific sidebar widgets for the Gauntlet Terminal cockpit by writing .gauntlet-terminal/widgets.json. Each widget is a shell command the terminal polls and renders in the sidebar. Use when the user wants to surface repo-specific state (counts, status, metrics) in the terminal sidebar, or runs /terminal-widget."
+description: "Add or edit repo-specific sidebar widgets for the TerMinal cockpit by writing .TerMinal/widgets.json. Each widget is a shell command the terminal polls and renders in the sidebar. Use when the user wants to surface repo-specific state (counts, status, metrics) in the terminal sidebar, or runs /terminal-widget."
 ---
 
 # /terminal-widget — Repo-specific cockpit sidebar widgets
 
-The Gauntlet Terminal discovers per-repo sidebar widgets from a standardized
+The TerMinal discovers per-repo sidebar widgets from a standardized
 file at the repo root:
 
 ```
-<repo-root>/.gauntlet-terminal/widgets.json
+<repo-root>/.TerMinal/widgets.json
 ```
 
 It's a JSON **array** of command widgets. The terminal polls each widget's shell
@@ -52,7 +52,7 @@ repo-specific state (open tickets, build status, queue depth, deploy version, �
 
 ## Process
 
-1. Read `.gauntlet-terminal/widgets.json` if it exists (else start a new array).
+1. Read `.TerMinal/widgets.json` if it exists (else start a new array).
 2. Append/edit a widget object per the schema. Keep `command` a one-liner that
    prints a tiny result fast; pick `mode` by shape (count→big, status→text,
    pairs→kv).

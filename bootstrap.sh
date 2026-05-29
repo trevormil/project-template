@@ -70,9 +70,9 @@ mkdir -p "$DST/backlog" "$DST/sessions" "$DST/.reviews" "$DST/.checks"
 [ -f "$DST/sessions/README.md" ] || cp "$SRC/sessions/README.md" "$DST/sessions/README.md"
 [ -f "$DST/.reviews/README.md" ] || cp "$SRC/.reviews/README.md" "$DST/.reviews/README.md"
 [ -f "$DST/.checks/README.md" ]  || cp "$SRC/.checks/README.md"  "$DST/.checks/README.md"
-mkdir -p "$DST/.gauntlet-terminal"
-[ -f "$DST/.gauntlet-terminal/widgets.json" ] || \
-  cp "$SRC/.gauntlet-terminal/widgets.json" "$DST/.gauntlet-terminal/widgets.json"
+mkdir -p "$DST/.TerMinal"
+[ -f "$DST/.TerMinal/widgets.json" ] || \
+  cp "$SRC/.TerMinal/widgets.json" "$DST/.TerMinal/widgets.json"
 say "backlog/.next-id, sessions/.next-id, .reviews + .checks READMEs, terminal widgets seeded (existing left untouched)"
 
 # --- docs skeleton (seed only if absent) -------------------------------------

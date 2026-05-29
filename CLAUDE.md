@@ -111,7 +111,7 @@ snapshot for the developer **managing agents** in this repo — what needs you
 Regenerate it deterministically from local state any time with
 `.claude/bin/status > .status.md`; agents refresh it at checkpoints
 (session start/end, after opening/merging PRs, when something starts needing
-you). It can also feed a Gauntlet Terminal sidebar widget (see
+you). It can also feed a TerMinal sidebar widget (see
 `/terminal-widget`).
 
 ## [4] Tickets
@@ -243,7 +243,7 @@ part. Short tickets don't need it.
 ## [13] Activity feed
 
 Surface every meaningful workflow milestone to the shared **activity feed** so
-it shows up live (and as a desktop notification) in Gauntlet Terminal. One call,
+it shows up live (and as a desktop notification) in TerMinal. One call,
 at the moment it happens:
 
 ```bash

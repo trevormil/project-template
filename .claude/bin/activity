@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# activity — append a workflow event to the Gauntlet Terminal activity feed.
+# activity — append a workflow event to the TerMinal activity feed.
 #
 #   activity <kind> "<title>" ["<detail>"]
 #
@@ -14,7 +14,7 @@ set -uo pipefail
 KIND="${1:-info}"
 TITLE="${2:-}"
 DETAIL="${3:-}"
-LOG="${GT_ACTIVITY_LOG:-$HOME/.config/gauntlet-terminal/activity.jsonl}"
+LOG="${GT_ACTIVITY_LOG:-$HOME/.config/TerMinal/activity.jsonl}"
 
 mkdir -p "$(dirname "$LOG")" 2>/dev/null || exit 0
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
