@@ -125,7 +125,10 @@ Checkpoints — run `/compact` (or summarize-and-purge) at each:
 Prefer **out-of-process delegation** so heavy steps never bloat the
 orchestrator: each `/code-review` invocation runs in its own worktree under
 `codex exec`, and the verdict is what comes back — the per-PR artifact path,
-verdict, test counts, and finding counts, not the full review transcript.
+verdict, test counts, and finding counts, not the full review transcript. See
+the `/factory` skill's `[2.6] Orchestrator pattern` for the full table of
+delegation choices (in-process subagent / `codex exec` / `claude -p` /
+worktree-spawn) and their tradeoffs; the same rules apply here.
 
 ## Phase 2 — Batch-review the whole stack
 

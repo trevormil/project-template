@@ -88,6 +88,42 @@ runs in a `codex exec` subprocess (the artifact is on disk; only the verdict
 needs to come back), and each batch review runs in its own worktree. When
 spawning sub-agents, ask them for a structured summary, not a transcript.
 
+## [2.6] Orchestrator pattern — the factory agent stays thin
+
+**The main `/factory` agent is a coordinator, not a worker.** It knows the
+*state* of the work — which tickets are in scope, which PRs are stacked, which
+verdicts are in — but it never holds the *content* of any individual step (a
+file's diff, a review body, a test log). Anything heavy is delegated to one of
+the patterns below; the orchestrator gets back a small, structured result and
+re-reads from disk on demand.
+
+Pick the delegation pattern by the shape of the work:
+
+| Pattern | When to reach for it | Tradeoffs |
+|---|---|---|
+| **In-process subagent** (Claude Code Task / Agent tool) | Single-shot research, audit, multi-file scan, "find me X across the codebase" — work that needs Claude's tools + skills but no long edit loop. Parallel fan-out across N items. | + Easy invocation, parallelizable, shares the parent's model session. − The *return value* still consumes parent context — keep the schema/summary tight. − Stateless: brief it like a fresh colleague; the prompt **is** its memory. |
+| **`codex exec` subprocess** (Bash) | Code review, test runs, deterministic-output passes. Anything where you want adversarial-different-model eyes + an on-disk artifact. | + Fully isolated context — parent only sees stdout. + Different model family (useful for adversarial review). + Artifact persists to disk = natural memory. − Cold start, slower per call. − Separate auth/billing. − Limited to codex's toolset. |
+| **`claude -p` subprocess** (Bash) | A focused implementation/refactor step you want isolated from the orchestrator but still in Claude's hands. One-shot, no UI. | + Out-of-process, no parent bloat. + Same model family as parent (consistent behavior). − Separate session — uses your Claude credits independently. − One-shot: no multi-turn refinement. |
+| **Spawn a session in a worktree** (TerMinal's Agents/Factory tabs; or `git worktree add` + a fresh `claude` session) | A full ticket-to-PR loop that needs many turns (TDD, fix cycles, commit + push). The heavyweight option — use when the work genuinely needs a sustained loop. | + Maximum isolation; visible + cancellable in the Agents tab. + Persists across many turns; can iterate. − Heavyweight to spin up; needs cleanup. − Each adds an active session to manage. |
+
+**Briefing rule — feed in enough memory, no more.** Treat each delegated step
+as a fresh colleague who knows nothing about this run. Hand over: (a) the
+ticket id(s) and one-line goal, (b) the parent branch / base SHA, (c) the
+specific files or paths that matter, (d) the `CLAUDE.md` slice(s) relevant to
+*this* step (not the whole file), (e) explicit, verifiable success criteria.
+**Let the delegate re-read the rest from disk** — don't pre-load it, that just
+moves the bloat from the orchestrator into the subagent's prompt.
+
+Anti-patterns:
+
+- Returning a full diff / full review / full test log to the orchestrator.
+  Return the verdict + an artifact path; the orchestrator can re-read iff
+  needed.
+- Pre-loading a giant context "just in case." If the delegate doesn't need it
+  to satisfy the success criteria, leave it on disk.
+- Choosing a Task subagent for work that runs many turns. Use a subprocess or
+  a real worktree session instead — Task summaries get expensive fast.
+
 ## [3] What `/factory` adds vs `/stacked-mr` (and what it does NOT)
 
 | | `/stacked-mr` | `/factory` |
