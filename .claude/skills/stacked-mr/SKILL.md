@@ -113,7 +113,7 @@ of a single review instead of N reviews back-to-back.
    PR an isolated worktree at its branch tip:
    ```bash
    # for each PR branch in the stack (run these concurrently):
-   wt="$HOME/CompSci/gauntlet/.worktrees/<repo>/<branch>"
+   wt="${WORKTREES_DIR:-$HOME/.worktrees}/<repo>/<branch>"
    git worktree add "$wt" "<branch>"
    ( cd "$wt" && /code-review for this PR in the background ) &
    ```
