@@ -11,6 +11,7 @@ created: 2026-05-26
 updated: 2026-05-26
 prs: []
 refs: []
+depends_on: []
 ---
 
 Canonical schema reference for in-repo tickets. This file is **not** a real
@@ -44,6 +45,12 @@ id makes it inert). Real tickets live at `backlog/NNNN-kebab-slug.md`.
   MR URLs both parse.)
 - `refs` — optional array of in-repo links: plan unit IDs (`U10`), ADRs
   (`ADR-0002`), or doc paths. Ties a ticket to the design artifacts it advances.
+- `depends_on` — optional array of **ticket IDs** (integers) this one is
+  blocked by. A ticket is **blocked** when any id in this list points to a
+  ticket whose `status` is not `closed`. The Tickets tab renders a red
+  `blocked` badge on the list row, and the detail view shows clickable
+  dependency chips colored red when the dependency is still open. `/factory`
+  treats blocked tickets as out-of-scope until their dependencies close.
 
 ## Filename convention
 
