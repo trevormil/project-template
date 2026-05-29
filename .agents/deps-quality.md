@@ -51,13 +51,13 @@ If `HEAD == lastScannedSha` AND last advisory feed update was before
    - Safe bumps + auto-fix changes → single PR `chore: deps + lint sweep`.
    - Critical CVE that can't be auto-fixed → HITL via `.claude/bin/hitl`.
    - Aging TODO/FIXME (>90d) → ticket per cluster.
-7. **Write artifact** to `.checks/deps-quality/<short_sha>.md`.
+7. **Write artifact** to `reports/deps-quality/<short_sha>.md`.
 8. **Update state** — `lastScannedSha`, `lastAuditAt`, `lastDeps`.
 9. **Activity** — `.claude/bin/activity check "Deps+quality · <N> bumps · <C> CVEs" "@ <short_sha>"`.
 
 ## Output artifact
 
-`.checks/deps-quality/<short_sha>.md`:
+`reports/deps-quality/<short_sha>.md`:
 
 ```yaml
 ---

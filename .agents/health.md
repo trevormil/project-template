@@ -54,7 +54,7 @@ published). Reasonable cadence: skip only if `<5 min` since `lastRunAt` AND
    - **`degraded`** — any of: lint fails, doc links broken, a probe times out,
      dep audit shows High CVEs, last commit > 30 days.
    - **`healthy`** — none of the above.
-4. **Write artifact** — `.checks/health/<short_sha>.md` with the breakdown.
+4. **Write artifact** — `reports/health/<short_sha>.md` with the breakdown.
 5. **HITL if unhealthy** — `.claude/bin/hitl "Repo health: unhealthy" "<list of failing probes>"`.
    Skip HITL on `degraded` (just emit Activity) to avoid alert fatigue.
 6. **Update state** — `lastScannedSha`, `lastRunAt`, `lastStatus`.
@@ -62,7 +62,7 @@ published). Reasonable cadence: skip only if `<5 min` since `lastRunAt` AND
 
 ## Output artifact
 
-`.checks/health/<short_sha>.md`:
+`reports/health/<short_sha>.md`:
 
 ```yaml
 ---

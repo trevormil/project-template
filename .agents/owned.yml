@@ -33,27 +33,27 @@ agents:
 
   drift-auditor:
     paths:
-      - .checks/drift/**/*.md
+      - reports/drift/**/*.md
     spec: .agents/drift.md
 
   coverage:
     paths:
-      - .checks/coverage/**/*.md
+      - reports/coverage/**/*.md
       - .agents/coverage/baseline.json
     spec: .agents/coverage.md
 
   deps-quality:
     paths:
-      - .checks/deps-quality/**/*.md
+      - reports/deps-quality/**/*.md
     spec: .agents/deps-quality.md
 
   perf:
     paths:
-      - .checks/perf/**/*.md
+      - reports/perf/**/*.md
       - .agents/perf/baseline.json
     spec: .agents/perf.md
 
   health:
     paths:
-      - .checks/health/**/*.md
+      - reports/health/**/*.md
     spec: .agents/health.md

@@ -1,6 +1,6 @@
 ---
 name: check
-description: "Run a scheduled cadence agent defined by an .agents/<kind>.md spec — runs in its own worktree, persists last-scanned SHA so re-runs can no-op early, and (depending on the spec's mode) either reports findings to .checks/<kind>/<sha>.md OR proposes changes via a ticket + MR. Use when the user runs /check <kind>, asks for a scheduled-agent run, or wires up a launchd schedule."
+description: "Run a scheduled cadence agent defined by an .agents/<kind>.md spec — runs in its own worktree, persists last-scanned SHA so re-runs can no-op early, and (depending on the spec's mode) either reports findings to reports/<kind>/<sha>.md OR proposes changes via a ticket + MR. Use when the user runs /check <kind>, asks for a scheduled-agent run, or wires up a launchd schedule."
 ---
 
 # /check — Scheduled cadence agents
@@ -41,7 +41,7 @@ forge adapter `forge.md`).
 Consistent with `/code-review`, delegate the run to Codex from the repo root:
 
 ```bash
-codex exec -s danger-full-access -C "$PWD" "Run the <kind> cadence agent following .agents/<kind>.md in this repo exactly. Honor the spec's mode (report or writer), early-exit fast path, sole-writer scope, ticket+MR workflow, and worktree isolation. Write the artifact to .checks/<kind>/<short-sha>.md per the contract. Never push directly to main."
+codex exec -s danger-full-access -C "$PWD" "Run the <kind> cadence agent following .agents/<kind>.md in this repo exactly. Honor the spec's mode (report or writer), early-exit fast path, sole-writer scope, ticket+MR workflow, and worktree isolation. Write the artifact to reports/<kind>/<short-sha>.md per the contract. Never push directly to main."
 ```
 
 `-s danger-full-access` is required for the worktree + push steps.
@@ -99,7 +99,7 @@ Per the spec's decision rules, choose for each finding:
 
 ### 5. Write the artifact
 
-`.checks/<kind>/<short_sha>.md` per the kind's frontmatter schema. Always
+`reports/<kind>/<short_sha>.md` per the kind's frontmatter schema. Always
 write the artifact, even on `status: ok` with no findings — the artifact is
 the run record.
 

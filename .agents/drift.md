@@ -66,14 +66,14 @@ PR vs ticket:
    `chore(docs): fix N drift items`.
 6. **For non-trivial findings**: file a ticket via `.claude/skills/ticket` with
    the audit-report path attached.
-7. **Write artifact** to `.checks/drift/<short_sha>.md` (always — even if no
+7. **Write artifact** to `reports/drift/<short_sha>.md` (always — even if no
    findings, the artifact records the run).
 8. **Update state** — `lastScannedSha = HEAD`, `lastFindings = N`.
 9. **Activity** — `.claude/bin/activity check "Drift · <N> findings" "@ <short_sha>"`.
 
 ## Output artifact
 
-`.checks/drift/<short_sha>.md`:
+`reports/drift/<short_sha>.md`:
 
 ```yaml
 ---

@@ -98,7 +98,7 @@ ticket closed or a new ADR landed — check each category independently.
 
 ## Output artifact
 
-`.checks/auto-docs/<short_sha>.md` — frontmatter + per-category regen summary.
+`reports/auto-docs/<short_sha>.md` — frontmatter + per-category regen summary.
 
 ```yaml
 ---

@@ -48,13 +48,13 @@ If `HEAD == lastScannedSha` AND no new CI runs since `lastRunAt` → exit 0.
    - Each flake → file a ticket with the failing seed + retry log.
 6. **If any net-new tests written**: branch `coverage/<short_sha>`, commit,
    push, open PR `test: backfill <N> tests in <area>`.
-7. **Write artifact** to `.checks/coverage/<short_sha>.md`.
+7. **Write artifact** to `reports/coverage/<short_sha>.md`.
 8. **Update state** — `lastScannedSha`, `lastCoveragePct`, `flakeCount`.
 9. **Activity** — `.claude/bin/activity check "Coverage · <pct>% (Δ <delta>) · <N> flakes" "@ <short_sha>"`.
 
 ## Output artifact
 
-`.checks/coverage/<short_sha>.md`:
+`reports/coverage/<short_sha>.md`:
 
 ```yaml
 ---

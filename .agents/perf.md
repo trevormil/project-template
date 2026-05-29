@@ -48,13 +48,13 @@ If the repo has **no benchmark script**, write a single artifact
      commit, the benchmark diff, and a one-line hypothesis.
    - Regression with a clear-fix pattern (e.g., a known anti-pattern reverted
      to inefficient form) → opt-in fix-attempt PR. Default off.
-6. **Write artifact** to `.checks/perf/<short_sha>.md`.
+6. **Write artifact** to `reports/perf/<short_sha>.md`.
 7. **Update state** + (if improvement and stable) baseline.
 8. **Activity** — `.claude/bin/activity check "Perf · <regressions> regressions · <improvements> wins" "@ <short_sha>"`.
 
 ## Output artifact
 
-`.checks/perf/<short_sha>.md`:
+`reports/perf/<short_sha>.md`:
 
 ```yaml
 ---
