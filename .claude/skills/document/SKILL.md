@@ -95,3 +95,11 @@ If unclear, ask the user once per candidate.
 - **Trivial changes** — typos, formatting, mechanical refactors with no decision behind them.
 - **Speculative future plans** — those belong in a ticket/backlog, not docs.
 - **Duplicate ADRs** — if a similar decision already exists, propose an edit (or a `superseded-by` link) instead of a new ADR.
+
+## Activity
+
+After a doc is written, emit a feed event:
+
+```bash
+.claude/bin/activity doc "Doc · <ADR/runbook/learning> written" "<title>"
+```

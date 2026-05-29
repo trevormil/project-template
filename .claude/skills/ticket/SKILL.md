@@ -186,8 +186,13 @@ dashboard, no `flock`, no per-repo config. Commit `backlog/` (tickets +
 
 ## Activity
 
-After the ticket file is written, emit a feed event:
+Emit a feed event at each ticket checkpoint:
 
 ```bash
+# on file (new ticket):
 .claude/bin/activity ticket-filed "Ticket filed · #<id>" "<title>"
+# when a HITL ticket is filed (needs a human action):
+.claude/bin/activity blocked "HITL · #<id> needs you" "<action needed>"
+# when a ticket is closed:
+.claude/bin/activity ticket-closed "Ticket closed · #<id>" "<title>"
 ```

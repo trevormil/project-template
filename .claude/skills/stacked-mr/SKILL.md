@@ -201,6 +201,18 @@ where a restack is needed). **After the human finishes merging the batch, run
    the next PR from it (or from a deliberate earlier point for parallel lines —
    note it in the ledger if so).
 
+## Activity
+
+Each stacked PR already emits `pr-opened` (via `/pr-creation`) and `pr-verdict`
+(via the batch `/code-review`). Add the stack-level checkpoints:
+
+```bash
+# a true blocker needs a human decision (stop condition):
+.claude/bin/activity blocked "Stack blocked · <why>" "<options / ticket>"
+# the whole stack is built + reviewed (morning handoff):
+.claude/bin/activity task-complete "Stack complete · <N> PRs" "<X approve, Y rc>"
+```
+
 ## What this is NOT
 
 - Not a merge bot. It opens and reviews PRs; humans merge.

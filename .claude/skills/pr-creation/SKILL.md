@@ -150,5 +150,5 @@ learning, mention it ("might be worth `/document`-ing X") but don't auto-invoke.
 After the PR/MR is opened, emit a feed event:
 
 ```bash
-.claude/bin/activity pr-verdict "PR opened · !<iid>" "<title>"
+.claude/bin/activity pr-opened "PR opened · !<iid>" "<title>"
 ```

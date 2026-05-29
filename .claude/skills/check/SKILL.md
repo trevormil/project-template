@@ -64,3 +64,11 @@ Run directly in Claude only if `codex` is unavailable or the user asks.
 - Not `/code-review` (per-PR, six-axis, gating). Checks are repo-wide + advisory.
 - Not a scheduler. Trigger it yourself or via host cron; the skill just runs the
   inspection and writes the artifact.
+
+## Activity
+
+After the inspection, emit a feed event:
+
+```bash
+.claude/bin/activity check "Check · <kind> · <N> findings" "@ <short_sha>"
+```

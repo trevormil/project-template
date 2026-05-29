@@ -51,3 +51,14 @@ Run directly in Claude only if `codex` is unavailable or the user asks.
   `error`.
 - **Don't re-run until green.** One run per invocation; flaky tests are findings
   worth a `/ticket`.
+
+## Activity
+
+After the run, emit a feed event with the result:
+
+```bash
+# pass:
+.claude/bin/activity tests-pass "Tests pass · <N> passed" "<runner> in <time>"
+# fail:
+.claude/bin/activity tests-fail "Tests fail · <F> failed / <N>" "<runner>"
+```

@@ -71,3 +71,11 @@ auto-`/document` or file new tickets — this is pure reconciliation.
 2. **Only edit `backlog/` files.** No code changes, no doc writes.
 3. **Don't close a ticket whose PR isn't actually merged** — verify via `gh`,
    don't assume from the `prs:` link alone.
+
+## Activity
+
+For each ticket closed during reconciliation, emit a feed event:
+
+```bash
+.claude/bin/activity ticket-closed "Ticket closed · #<id>" "PR !<iid> merged"
+```
