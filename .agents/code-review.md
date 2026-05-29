@@ -53,6 +53,31 @@ new commit invalidates earlier assumptions.
 Tests remain non-negotiable: every `/code-review` runs the detected suite for
 the current HEAD regardless of scope.
 
+## Batch stacked-MR review
+
+In `/stacked-mr` mode review is **batched**: the stack is built without per-PR
+review, then one pass reviews every PR in the stack. The batch is **N independent
+single-PR reviews run concurrently**, not a new combined format:
+
+- **One artifact set per PR, unchanged.** Each PR still gets its own
+  `.reviews/<pr>/<sha>.md` + `findings.json` + `suggestions.json`, keyed by that
+  PR's number and head SHA. There is no combined batch artifact.
+- **Attribution = the PR's own incremental slice.** Each review resolves its base
+  from the PR's forge target branch (the parent PR's branch in a stack), so it
+  sees only that PR's delta and attributes findings to the owning PR. This is the
+  per-PR incremental base, distinct from the "newest earlier reviewed commit"
+  base used when re-reviewing one PR over time.
+- **Isolation is mandatory.** Each concurrent review runs in its **own worktree**
+  at that PR's branch tip. Reviews inspect and test a checkout; sharing one
+  working tree across parallel reviews corrupts git state and cross-contaminates
+  results.
+- **Single-URL invariant holds.** `/code-review` (and `bin/code-review-preflight`)
+  take exactly one PR/MR per invocation. "Batch" is the orchestrator firing N
+  invocations at once (one per PR) — see the `/stacked-mr` skill. The test gate,
+  six-axis scoring, and verdict logic per PR are unchanged.
+- **The bar is unchanged.** Batching changes *when* and *how* reviews run, not
+  the merge bar: every PR still needs approve + tests pass + 0 medium+ findings.
+
 ## Per-finding state (`findings.json`)
 
 Every finding has a **stable id** that survives across iterations:

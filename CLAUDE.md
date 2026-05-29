@@ -169,6 +169,11 @@ Contract: [`.agents/code-review.md`](./.agents/code-review.md).
 - **Run it in the background.** Review is the most common dev-speed bottleneck
   (~4 min). Fire it async and go do other useful work; don't sit blocked. The
   reviewer can also file out-of-scope follow-ups as `horizon: future` tickets.
+- **In `/stacked-mr` mode, review is batched.** Don't review per-PR while
+  building the stack; defer all reviews to one end-of-stack pass that fans out a
+  `/code-review` per PR in parallel (each in its own worktree). See the contract
+  ([`.agents/code-review.md`](./.agents/code-review.md) → "Batch stacked-MR
+  review") and the `/stacked-mr` skill.
 
 **Cadence checks** are the other half: `/check <kind>` runs a *repo-level*
 inspection (dead-code, dep-drift) on the whole tree, on a cadence — not per
@@ -216,9 +221,10 @@ part. Short tickets don't need it.
 - **`/notify`** — on-demand two-way Telegram bridge for AFK sessions (off by
   default; depends on machine-level telegram scripts/creds in `~/.claude`).
 - **`/stacked-mr`** — autonomous overnight mode: stacks PRs (each branch off the
-  prior tip, base = parent branch), TDD per ticket, code-reviewed to the bar,
-  non-blocking pipeline, **no human merge** until you review the whole stack in
-  the morning. Produces ~N stacked PRs.
+  prior tip, base = parent branch), TDD per ticket, built **without per-PR
+  review**, then **one batch review pass** at the end that reviews every PR in
+  parallel (one review per PR, each in its own worktree) to the bar. **No human
+  merge** until you review the whole stack in the morning. Produces ~N stacked PRs.
 
 ## [11] Conventions
 

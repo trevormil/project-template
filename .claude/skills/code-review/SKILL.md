@@ -55,6 +55,18 @@ Keep the prompt backtick-free (write "tsc" not the backticked form). If
 backticks are unavoidable, write the prompt to a temp file and pass
 `"$(cat /tmp/prompt.txt)"`.
 
+### Stacked-MR batch mode
+
+In `/stacked-mr` mode this skill is invoked **once per PR as a parallel batch** at
+the end of the stack — not per-PR during the build. Each invocation is still a
+normal **single-PR** review (one URL → one preflight packet → one
+`.reviews/<number>/<sha>.md` + its own `findings.json`/`suggestions.json`). The
+`/stacked-mr` skill orchestrates the concurrency and gives each review its **own
+worktree** so the parallel reviews don't corrupt each other's checkout. Don't try
+to review N PRs in one call — there is no multi-URL mode. See
+[`.agents/code-review.md`](../../../.agents/code-review.md) → "Batch stacked-MR
+review".
+
 ### When to run synchronously (foreground)
 
 Only when the next step depends on the verdict: the user said "wait for it",

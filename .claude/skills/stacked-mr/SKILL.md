@@ -1,6 +1,6 @@
 ---
 name: stacked-mr
-description: "Autonomous AFK mode that works a queue of tickets as a STACK of PRs: each branch is cut from the prior PR's tip (base = parent branch), implemented TDD-first, pushed, opened as a PR, and code-reviewed to passing — then immediately start the next PR on top WITHOUT waiting for a merge. No human in the loop until morning, when the user reviews the whole stack. Use when the user runs /stacked-mr or asks to stack PRs overnight / autonomously."
+description: "Autonomous AFK mode that works a queue of tickets as a STACK of PRs: each branch is cut from the prior PR's tip (base = parent branch), implemented TDD-first, pushed, and opened as a PR — WITHOUT per-PR review — then immediately start the next PR on top. Once the whole stack is built, run ONE batch code-review pass that reviews every PR in parallel (one review per PR, each in its own worktree). No human in the loop until morning, when the user reviews the whole stack. Use when the user runs /stacked-mr or asks to stack PRs overnight / autonomously."
 ---
 
 # /stacked-mr — Autonomous overnight PR stacking
@@ -11,8 +11,18 @@ keeps flowing without ever merging to `main`. The human reviews the entire stack
 (often ~20 PRs) in the morning and merges bottom-up themselves (global §8 — merge
 is still human-only).
 
-Each PR in the stack is still **fully code-reviewed to a passing bar** along the
-way — this is not "skip review", it's "don't wait for a human merge between PRs".
+**Review is batched at the end, not per-PR.** Build the whole in-scope stack
+*without* firing a review on each PR, then run **one batch review pass** that fans
+out a `/code-review` per PR concurrently (each in its own worktree). This is not
+"skip review" — every PR still has to hit the passing bar — it's "review the whole
+stack once, in parallel, after it's built." Two reasons this beats per-PR review:
+
+- **Speed.** A review is ~4 min. Reviewing N PRs serially is ~4·N min; running
+  them concurrently at the end is ~4 min total (bounded by the slowest single PR).
+- **No review-vs-build contention.** A code review mutates/inspects a checkout;
+  running one while the builder is still editing the same repo contaminates the
+  test checkout and produces bogus verdicts. Deferring *all* reviews until after
+  the build phase removes that race entirely.
 
 > Forge-agnostic: this doc says "PR" / `gh`, but the stacking model is identical
 > on GitLab — "MR" / `glab mr create --target-branch <parent>` (resolve with
@@ -42,7 +52,15 @@ main
 - Each PR's **base** is its parent branch, so the PR diff (and the review) is
   just that PR's own delta — clean, reviewable units.
 - `gh pr create --base <parent-branch>` sets this. `/code-review` resolves the
-  base from the PR, so it reviews the right delta automatically.
+  base from the PR, so it reviews the right delta automatically — this is also
+  what makes the end-of-stack batch review attribute each finding to the owning
+  PR (each review sees only that PR's incremental slice).
+
+## Phase 1 — Build the stack (no reviews)
+
+Work the queue ticket-by-ticket with the loop below. **Do not run `/code-review`
+during this phase** — reviews are deferred to the single batch pass in Phase 2.
+Keep stacking until the in-scope queue is exhausted (or a stop condition hits).
 
 ## Loop (per ticket)
 
@@ -65,34 +83,72 @@ main
    ```
    Note the stack position in the body ("Stacked on #<parent-PR>. Part N of the
    <goal> stack."). Link the PR url into the ticket's `prs:`.
-6. **Fire `/code-review` in the background** (it's the dev-speed bottleneck;
-   ~4 min) — do NOT wait. Ping a checkpoint via `/notify`.
+6. **Do NOT review here.** Ping a checkpoint via `/notify` if useful, update the
+   ledger, then go straight to the next ticket. Review happens once, in Phase 2.
 7. **Immediately start the next ticket on top** (step 1), branching from this
-   PR's tip — the *unreviewed* tip. This is the non-blocking pipeline: keep
-   stacking while reviews run in the background.
+   PR's tip. No reviews are running, so the stack just keeps growing cleanly.
 
-## Handling review verdicts as they land
+Keep a running ledger (in the active session doc, or a scratch note) of every
+PR, its branch, its parent, and its ticket. **Refresh
+`.claude/bin/status > .status.md` after each slice** so a human checking in
+overnight sees current progress without reading the transcript.
 
-Reviews complete asynchronously. When a `/code-review` notification arrives:
+> **Escape hatch:** for a genuinely trust-critical PR mid-stack (auth, money,
+> data migrations) you *may* review it immediately rather than deferring — but
+> that's the exception. The default is defer-and-batch.
+
+## Phase 2 — Batch-review the whole stack
+
+When the build phase ends (queue exhausted, or the user calls it), run **one
+batch review pass** over every PR in the stack. The reviews run **concurrently**,
+each in its **own worktree**, so the whole stack is reviewed in roughly the time
+of a single review instead of N reviews back-to-back.
+
+1. **Refresh the forge state once** for all PRs in the stack (so each review
+   resolves the right head SHA + base). Build the review list from the ledger:
+   one entry per PR with its number, branch, and parent branch.
+2. **Fan out one `/code-review` per PR, in parallel, each in its own worktree.**
+   A review inspects and tests a checkout — running N reviews in the *same*
+   working tree corrupts git state and cross-contaminates results, so give each
+   PR an isolated worktree at its branch tip:
+   ```bash
+   # for each PR branch in the stack (run these concurrently):
+   wt="$HOME/CompSci/gauntlet/.worktrees/<repo>/<branch>"
+   git worktree add "$wt" "<branch>"
+   ( cd "$wt" && /code-review for this PR in the background ) &
+   ```
+   Each review is still a normal **single-PR** review: it resolves its own base
+   (the parent branch) → its incremental delta → its own per-PR artifact +
+   `findings.json`/`suggestions.json`. "Batch" = the orchestration firing N of
+   them at once, not a new combined-artifact format.
+3. **Collect verdicts as they land** and record each in the ledger. When all
+   reviews are in, you have the full stack scorecard for the morning handoff.
+4. **Clean up worktrees** when reviews finish (`git worktree remove "$wt"`), or
+   leave them if you'll iterate on fixes (a fix + re-review reuses the worktree).
+
+> Mechanics note: each `/code-review` invocation is single-URL by design (one
+> preflight packet, one artifact per PR). The batch is N concurrent invocations,
+> not one call over N PRs. See [`.agents/code-review.md`](../../../.agents/code-review.md)
+> ("Batch stacked-MR review").
+
+## Handling review verdicts
+
+Verdicts arrive together at the end of the batch pass. For each PR:
 
 - **approve + tests pass + 0 medium+ findings** → that PR has hit the bar. Note
   it in the morning summary; nothing else to do.
 - **request-changes / blocked** → apply the findings' fix prompts to **that PR's
-  branch** (not the tip of the stack), push the fix, and re-fire `/code-review`
-  (background) for that PR. Then **restack children**: any branches cut from the
-  fixed branch must be rebased onto its new tip so the stack stays coherent:
+  branch** (not the tip of the stack), push the fix, then **re-review just that
+  PR** (a single `/code-review`, not the whole batch again). Then **restack
+  children**: any branches cut from the fixed branch must be rebased onto its new
+  tip so the stack stays coherent:
   ```bash
   git rebase --onto <fixed-branch> <old-parent-tip> <child-branch>
   git push --force-with-lease origin <child-branch>
   ```
   (`--force-with-lease` to a **feature** branch is allowed by the merge hook;
-  never to main/master.)
-
-Keep a running ledger (in the active session doc, or a scratch note) of every
-PR, its branch, its parent, and its latest review verdict. **Refresh
-`.claude/bin/status > .status.md` after each slice** so a human checking in
-overnight sees current progress + anything that started needing them, without
-reading the transcript.
+  never to main/master.) If a fix near the bottom of the stack restacks many
+  children, re-review the affected sub-chain as a small second batch.
 
 ## Stop conditions
 
@@ -129,13 +185,19 @@ where a restack is needed). **After the human finishes merging the batch, run
 1. **Never merge.** No `gh pr merge`, ever (global §8, hook-enforced). The stack
    waits for the human.
 2. **Every PR gets reviewed to the bar.** approve + tests pass + 0 medium+
-   findings. "Stacked" is not "unreviewed".
+   findings — enforced via the **end-of-stack batch review**, not per-PR during
+   the build. "Stacked" is not "unreviewed"; it's "reviewed all at once at the
+   end."
 3. **Force-push only to feature branches**, only for restacking, only with
    `--force-with-lease`. Never to main/master.
 4. **TDD-first** on every ticket — failing test before code.
-5. **Reviews run in the background**; keep stacking while they run. Don't block
-   the pipeline on a verdict.
-6. **One stack tip at a time.** The "current tip" is well-defined; always branch
+5. **No reviews during the build phase.** Reviews are batched into one
+   parallelized pass after the stack is built (Phase 2) — this both speeds up
+   review and avoids review-vs-build checkout contention. The lone exception is
+   the trust-critical escape hatch.
+6. **Batch reviews run in isolated worktrees**, one per PR, so the concurrent
+   reviews don't corrupt each other's git state.
+7. **One stack tip at a time.** The "current tip" is well-defined; always branch
    the next PR from it (or from a deliberate earlier point for parallel lines —
    note it in the ledger if so).
 

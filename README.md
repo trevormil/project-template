@@ -74,7 +74,7 @@ bootstrap.sh                  inject the workflow into an existing repo
     security-scan/            deterministic security floor (CVE/secrets/SAST)
     document/ document-audit/ knowledge base capture + rot check
     notify/                   on-demand AFK Telegram bridge
-    stacked-mr/               autonomous overnight PR/MR stacking
+    stacked-mr/               autonomous overnight PR/MR stacking (batch-reviewed at the end)
     terminal-widget/          add repo-specific Gauntlet Terminal sidebar widgets
 .agents/
   forge.md                    GitHub/GitLab detection + gh↔glab command mapping
