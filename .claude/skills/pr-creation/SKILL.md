@@ -119,6 +119,27 @@ EOF
 
 Don't pass `--merge` / `--auto` — merging is human-only.
 
+### 6.5. Apply the `auto-mergeable` label if eligible
+
+If the diff is **only** docs / markdown / tickets / reports / agent specs —
+nothing under `src/`, `lib/`, `app/`, no lockfile, no runtime config — tag the
+change with the `auto-mergeable` label so the human can spot it in the MR
+list and batch-merge safe ones without a full /code-review cycle. Detection:
+
+```bash
+nontxt=$(git diff --name-only "origin/main..HEAD" | grep -v -E '\.(md|json|ya?ml|txt)$|^backlog/|^reports/|^docs/|^.agents/|^.claude/' || true)
+if [ -z "$nontxt" ]; then
+  case "$forge" in
+    github) gh pr edit "$pr" --add-label "auto-mergeable" ;;
+    gitlab) glab mr update "$pr" --label "auto-mergeable" ;;
+  esac
+fi
+```
+
+Skip the label when in doubt — it's purely opt-in. See
+[`.agents/forge.md`](../../../.agents/forge.md) for the canonical convention +
+which scheduled agents should always tag.
+
 ### 7. Link the PR back to the ticket(s)
 
 For **each** ticket this PR closes, open `backlog/<id>-*.md`:

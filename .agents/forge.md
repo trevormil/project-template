@@ -52,3 +52,30 @@ Notes:
 - `gh` / `glab` must be authenticated (`~/.config/gh/`, `~/.config/glab-cli/`).
 - For self-hosted GitLab, `glab` needs the instance configured
   (`glab auth login --hostname <host>`).
+
+## `auto-mergeable` label convention
+
+When an agent opens a PR/MR whose diff is **only docs / markdown / tickets /
+reports / agent specs** — i.e. nothing under a code path or a lockfile, nothing
+that affects runtime behavior — it should tag the change with the
+**`auto-mergeable`** label. The human (or a future bot) can then merge those
+without a full /code-review cycle.
+
+```bash
+# After `gh pr create` / `glab mr create` returns the URL:
+case "$forge" in
+  github) gh pr edit <N> --add-label "auto-mergeable" ;;
+  gitlab) glab mr update <N> --label "auto-mergeable" ;;
+esac
+```
+
+**Eligible (always tag):** changelog, auto-docs, drift-auditor trivial-fix PRs,
+report-only changes under `reports/`, ticket updates under `backlog/`.
+
+**Not eligible (never tag):** coverage (adds test files), deps-quality (touches
+lockfile + can affect runtime), perf (touches code), any PR with edits under
+`src/`, `lib/`, `app/`, etc., or under root config that affects build/runtime.
+
+When in doubt, **omit the label** — it's purely opt-in. TerMinal renders the
+label as a green `auto-mergeable` chip on the MR row so the human can scan a
+list and merge the safe ones in batch.
