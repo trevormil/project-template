@@ -122,6 +122,30 @@ hand-edit `.next-id`). List with `.claude/skills/ticket/bin/tickets [status]
 [priority] [horizon]`. Prose lives **after** the closing `---`, never inside the
 frontmatter delimiters.
 
+### [4.1] Status lifecycle (keep it gap-free)
+
+A ticket's `status` must always reflect reality. The lifecycle is
+**`open` → `in-progress` → `closed`** (with `stuck` / `icebox` as off-ramps), and
+each transition has an owner — **never leave a worked ticket stale**:
+
+- **`open` → `in-progress`** the moment work actually starts on it:
+  `/session-start` sets every ticket it commits to this session to
+  `in-progress`; `/pr-creation` sets it `in-progress` before the first commit;
+  `/stacked-mr` sets it when it cuts the branch. If you start a ticket by any
+  other path, set it yourself.
+- **`in-progress` → `closed`** only when its PR/MR actually **merges** —
+  `/merge-sync` does this (and scrubs the merged URL from `prs:`). Agents never
+  pre-close on "PR opened"; the human merges, then reconciliation closes.
+- **`stuck`** when blocked after reasonable effort (note why); **`icebox`** when
+  deliberately deferred. Both are explicit, not a ticket left rotting in
+  `in-progress`.
+
+**Reconciliation is periodic, not hopeful.** `/session-end` reconciles every
+ticket touched in the session **and** sweeps the backlog for drift (merged-but-
+open, in-progress with no open PR, long-stale `open`). The same sweep runs
+standalone via `/merge-sync` anytime PRs have landed. The goal: at any moment,
+`bin/tickets in-progress` is exactly the work actually in flight.
+
 The **`horizon`** tag (`now` | `next` | `future`) is orthogonal to priority —
 it's the scope/timeline lens. `future` is where `/code-review` and `/session-end`
 park out-of-scope extensions and ideas, so the backlog separates "do now" from

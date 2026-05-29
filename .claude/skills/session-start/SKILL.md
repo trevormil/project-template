@@ -93,7 +93,15 @@ If the task tool is available, create one task per checklist item via
 doc's checkboxes and the task list in sync as work proceeds. (If it isn't, the
 session doc's `[3] Checklist` remains the source of truth — no-op this step.)
 
-### 6. Refresh the live status + announce
+### 6. Mark the in-scope tickets in-progress
+
+For every ticket this session commits to working, set `status: in-progress` and
+bump `updated:` to today (`/ticket` update, or edit the frontmatter directly).
+This keeps the lifecycle gap-free (CLAUDE.md [4.1]) — `bin/tickets in-progress`
+should equal the work actually in flight. Don't flip tickets you're only
+referencing, and leave `future`/`icebox` ones as-is.
+
+### 7. Refresh the live status + announce
 
 Refresh the human-facing snapshot: `.claude/bin/status > .status.md` (gitignored;
 the at-a-glance state for whoever is managing agents in this repo).

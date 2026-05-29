@@ -1,6 +1,6 @@
 ---
 name: merge-sync
-description: "Reconcile ticket + backlog state after a human merges PRs. For every backlog ticket whose linked PR(s) have merged, set the ticket status: closed and scrub the merged PR URL from prs:. Read-only on git (never merges); only edits backlog files. Use after merging a stack (e.g. the /stacked-mr morning batch) or anytime PRs have landed."
+description: "Reconcile ticket + backlog state with reality: close tickets whose PR(s) merged and scrub the merged URL from prs:, plus a periodic drift sweep (in-progress with no open PR, closed-but-still-linked, long-stale open). Read-only on git (never merges); only edits backlog files. The standalone periodic ticket cleanup; also runs inside /session-end. Use after merging a stack or anytime PRs have landed."
 ---
 
 # /merge-sync — Reconcile tickets with merged PRs
@@ -49,10 +49,23 @@ For each ticket whose PR(s) merged:
 
 Leave tickets whose PRs are still open/closed-unmerged untouched.
 
-### 4. Report
+### 4. Sweep for drift (periodic cleanup)
 
-List what changed: which tickets were closed, which PR URLs were scrubbed, and
-any ticket left open because not all its PRs merged. Refresh the live snapshot
+Beyond merge-driven closes, do a quick hygiene pass so the backlog matches
+reality (CLAUDE.md [4.1] — this is the workflow's periodic ticket cleanup, and
+the same sweep `/session-end` runs):
+
+- **`in-progress` with no open PR** and no active session on it → move back to
+  `open`, or to `stuck` (note why) / `icebox`. Don't leave it falsely in flight.
+- **`closed` but still listing a `prs:` URL** → scrub the URL.
+- **Long-stale `open`** (untouched, clearly out of scope) → surface it and
+  suggest `icebox`/`future`; change it only with confirmation, since `open` may
+  just mean "not started yet".
+
+### 5. Report
+
+List what changed: which tickets were closed, which PR URLs were scrubbed, any
+status drift fixed, and any ticket left open because not all its PRs merged. Refresh the live snapshot
 (`.claude/bin/status > .status.md`) to reflect the closed tickets. Don't
 auto-`/document` or file new tickets — this is pure reconciliation.
 

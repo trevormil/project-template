@@ -68,7 +68,7 @@ bootstrap.sh                  inject the workflow into an existing repo
     session-end/              close a session: document, clean up, file follow-ups
     pr-creation/              ticket → branch → PR/MR → link back to ticket
     code-review/              Codex review → in-repo .reviews/ artifacts
-    merge-sync/               after human merge: close tickets + scrub urls
+    merge-sync/               reconcile tickets ↔ reality (close merged + drift sweep)
     test-suite/               ad-hoc chat-only test run (the cheap inner loop)
     check/                    cadence repo inspections → .checks/ (dead-code, …)
     security-scan/            deterministic security floor (CVE/secrets/SAST)

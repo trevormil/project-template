@@ -107,13 +107,30 @@ here is how a codebase rots silently:
 Run `/document-audit` if the session touched docs heavily — it flags broken
 refs, stale runbooks, and ADR contradictions.
 
-### 7. Suggest new tickets
+### 7. Reconcile ticket statuses (periodic cleanup)
+
+Make the backlog match reality — this is the workflow's **periodic ticket
+cleanup** (CLAUDE.md [4.1]). Run `/merge-sync` first (closes any ticket whose
+PR/MR has merged + scrubs the URL), then sweep `bin/tickets`:
+
+- **Touched this session:** every ticket worked is `in-progress` (still WIP) or
+  `closed` (merged) — never left `open`.
+- **Merged but still open/in-progress:** close it (or let `/merge-sync` do it).
+- **`in-progress` with no open PR and no active work:** move back to `open`, or
+  to `stuck` (with a why) / `icebox` — don't leave it falsely "in flight".
+- **Long-stale `open`** (untouched, out of scope): `icebox` or `future`, or
+  confirm it's still wanted.
+
+The bar: after this step, `bin/tickets in-progress` is exactly the work actually
+in flight. Note any status changes in the session doc's Outcomes / Follow-ups.
+
+### 8. Suggest new tickets
 
 For every follow-up, discovered bug, deferred item, or refactor: file a
 `/ticket` (present them **one at a time** and confirm — don't batch-dump). Record
 the resulting ids under the session doc's **Follow-ups**.
 
-### 8. Capture documentation (most important)
+### 9. Capture documentation (most important)
 
 Decide what this session produced that's worth preserving, and route each via
 `/document` (one candidate at a time):
@@ -127,7 +144,7 @@ Decide what this session produced that's worth preserving, and route each via
 Then fill the session doc's **Documentation** section: what was captured (with
 paths) and what still needs documenting (as a follow-up).
 
-### 9. Close the session
+### 10. Close the session
 
 Set `status: closed`, `ended:` now. Confirm every anchored body section
 (`[1]`–`[8]`) is filled (no stub headings left) and any new subsections you
@@ -135,7 +152,7 @@ added carry `[N.M]` anchors. Refresh the live snapshot
 (`.claude/bin/status > .status.md`) so it shows no active session. Commit the
 session doc + any doc/cleanup changes on a feature branch (never main).
 
-### 10. Summarize
+### 11. Summarize
 
 A tight wrap-up: what shipped (PRs/tickets), what was cleaned, what was
 documented (paths), and the top follow-ups for next session.
