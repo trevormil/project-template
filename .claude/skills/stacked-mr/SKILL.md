@@ -207,8 +207,8 @@ Each stacked PR already emits `pr-opened` (via `/pr-creation`) and `pr-verdict`
 (via the batch `/code-review`). Add the stack-level checkpoints:
 
 ```bash
-# a true blocker needs a human decision (stop condition):
-.claude/bin/activity blocked "Stack blocked · <why>" "<options / ticket>"
+# a true blocker needs a human decision (stop condition) → global HITL inbox:
+.claude/bin/hitl "Stack blocked · <why>" "<action needed / options>"
 # the whole stack is built + reviewed (morning handoff):
 .claude/bin/activity task-complete "Stack complete · <N> PRs" "<X approve, Y rc>"
 ```

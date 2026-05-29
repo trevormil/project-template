@@ -151,11 +151,25 @@ it's the scope/timeline lens. `future` is where `/code-review` and `/session-end
 park out-of-scope extensions and ideas, so the backlog separates "do now" from
 "someday" at a glance: `bin/tickets future`.
 
-The **`hitl`** flag (`true` | `false`) marks **human-in-the-loop** tickets — work
-that needs a manual action only you can take (approve a merge, provision creds, a
-browser/OAuth flow, a product call). Filing one sends a Telegram ping describing
-the action; list them with `bin/tickets hitl`. HITL tickets carry an
-`## Action needed` section.
+### [4.2] HITL — how agents reach the human (the global inbox)
+
+**Human-in-the-loop is THE primary way an agent gets the operator's attention, and
+it is NOT a per-repo ticket flag anymore — it's one GLOBAL inbox.** Any skill or
+agent, in any repo, that hits something only a human can resolve raises it with:
+
+```bash
+.claude/bin/hitl "<title>" "<action needed>" "<optional detail>"
+```
+
+That files a record to the global inbox (`~/.config/TerMinal/hitl.json` — the red
+badged HITL tab the operator watches across all repos), mirrors a `blocked` line to
+the activity feed, and **pings Telegram directly** (works even with the cockpit
+closed). Failed cron runs auto-file one. The human resolves items from the HITL tab.
+
+**Reserve it for TRUE human-needs** — a decision/spec fork, an approval, provisioning
+creds, an OAuth/browser flow, a hard blocker. **Do NOT** raise HITL for review
+`request-changes` or test failures inside a workflow — those are *iterative* and the
+agent/factory fixes them itself. HITL is for "I literally cannot proceed without you."
 
 ## [5] Branches, PRs/MRs & the forge
 

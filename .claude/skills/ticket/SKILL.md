@@ -59,10 +59,12 @@ Infer from context; ask once only if genuinely unclear:
   `now` = current scope, `next` = soon, `future` = extension / out-of-scope idea.
   Default `now`. Tickets filed by `/code-review` or `/session-end` as follow-ups
   are usually `future` (or `next` if they should be tackled soon).
-- **HITL** — `true` | `false` (default `false`). Set `true` when the ticket needs
-  a manual human action the agent can't do (approve a merge, provision creds, a
-  browser/OAuth flow, sign something, a product decision). HITL tickets get an
-  `## Action needed` body section and trigger a Telegram ping on filing (step 5).
+- **HITL** — a ticket is a unit of *work*; a human-need is something else. When you
+  hit something only the human can do (approve a merge, provision creds, an
+  OAuth/browser flow, a decision/spec fork), raise it to the **global HITL inbox**
+  with `.claude/bin/hitl "<title>" "<action needed>"` (CLAUDE.md [4.2]) — that's the
+  cross-repo, Telegram-pinging queue the operator watches. (The legacy per-ticket
+  `hitl: true` flag is superseded by that inbox; don't rely on it to get attention.)
 - **Source** — `manual`, `audit`, `feedback`, an agent name (e.g. `code-review`), or a ref.
 - **Refs** (optional) — plan unit IDs (`U10`), ADRs (`ADR-0002`), or doc paths this ticket advances.
 
@@ -117,19 +119,19 @@ Body (suggested; prose goes **after** the closing `---`):
 what gets sent to Telegram.>
 ```
 
-### 4. If HITL, notify the human
+### 4. If it needs a human, raise a HITL item
 
-When `hitl: true`, send a Telegram ping so the human knows there's an action
-waiting (depends on the machine-level telegram setup — see `/notify`; if it's
-not present, just say so and continue):
+A human-need is separate from the work ticket. If the human must act (a decision,
+approval, creds, an OAuth/browser flow, a blocker), raise it to the **global HITL
+inbox** (CLAUDE.md [4.2]) — that surfaces on the badged HITL tab AND pings Telegram
+directly, even with the cockpit closed:
 
 ```bash
-~/.claude/bin/telegram-notify.sh --kind=question \
-  "HITL ticket #<id>: <title>. Action needed: <the manual step + any link/options>."
+.claude/bin/hitl "<title>" "<the exact action the human must take + any url/options>"
 ```
 
-Use `--kind=question` for decisions, `--kind=blocked` if work is stuck until the
-human acts. Keep it phone-readable (lead with the action; include the url).
+Keep it phone-readable (lead with the action; include the url). Reserve it for true
+human-needs — not review feedback or test fails inside a workflow.
 
 ### 5. Confirm and stop
 
@@ -191,8 +193,8 @@ Emit a feed event at each ticket checkpoint:
 ```bash
 # on file (new ticket):
 .claude/bin/activity ticket-filed "Ticket filed · #<id>" "<title>"
-# when a HITL ticket is filed (needs a human action):
-.claude/bin/activity blocked "HITL · #<id> needs you" "<action needed>"
+# a human-need (decision/approval/creds/blocker) → the global HITL inbox (pings you):
+.claude/bin/hitl "<title>" "<action needed>"
 # when a ticket is closed:
 .claude/bin/activity ticket-closed "Ticket closed · #<id>" "<title>"
 ```

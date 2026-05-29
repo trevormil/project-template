@@ -77,10 +77,11 @@ no new way to build or review, and never changes the bar.
 When a pass surfaces something a human must decide — ambiguous spec, design fork, a
 destructive/cost-bearing action, a PR that can't reach the bar after stacked-mr's
 fix cycles, or a dependency on a human-only action (approve a merge, provision
-creds, an OAuth/browser flow) — park a HITL ticket (`/ticket` with `hitl: true` +
-an `## Action needed` section), ping `/notify`, and continue independent work; pause
-only if nothing else can proceed. The human resolves it from the HITL tab; the next
-loop picks it up once unblocked.
+creds, an OAuth/browser flow) — raise it to the **global HITL inbox** with
+`.claude/bin/hitl "<title>" "<action needed>"` (CLAUDE.md [4.2]; this pings the
+operator), then continue independent work; pause only if nothing else can proceed.
+The human resolves it from the HITL tab; the next loop picks it up once unblocked.
+Do **not** raise HITL for review `request-changes` — that's the iterative loop's job.
 
 ## [5] Discovery (optional — `--discover`)
 
@@ -122,6 +123,6 @@ learnings via `/document`; close with `/session-end`.
 ```bash
 .claude/bin/activity info "Factory started · <scope>" "looping the backlog"
 # each pass: /stacked-mr emits pr-opened + review verdicts per PR
-.claude/bin/activity blocked "Factory · HITL · #<id>" "<why / options>"
+.claude/bin/hitl "Factory blocked · <title>" "<action needed / options>"   # true human-needs → global inbox
 .claude/bin/activity task-complete "Factory done · <P> passes · <N> PRs" "<X at bar, Y stuck>"
 ```

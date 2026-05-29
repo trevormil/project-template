@@ -65,7 +65,7 @@ repo-specific state (open tickets, build status, queue depth, deploy version, â€
 Lean on this template's own bins so the cockpit shows workflow state:
 
 - **Open tickets** (big): `.claude/skills/ticket/bin/tickets open 2>/dev/null | tail -n +3 | wc -l | tr -d ' '`
-- **Needs you / HITL** (big): `.claude/skills/ticket/bin/tickets hitl 2>/dev/null | tail -n +3 | wc -l | tr -d ' '`
+- **Needs you / HITL** (big, global inbox): `python3 -c "import json,os;p=os.path.expanduser('~/.config/TerMinal/hitl.json');print(sum(1 for h in (json.load(open(p)) if os.path.exists(p) else []) if h.get('status')=='open'))" 2>/dev/null || echo 0`
 - **Active session** (text): `.claude/skills/session-start/bin/sessions active 2>/dev/null | tail -n +3`
 - **Git** (text): `git status -sb | head -6`
 
