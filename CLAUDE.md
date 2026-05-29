@@ -249,13 +249,13 @@ part. Short tickets don't need it.
   review**, then **one batch review pass** at the end that reviews every PR in
   parallel (one review per PR, each in its own worktree) to the bar. **No human
   merge** until you review the whole stack in the morning. Produces ~N stacked PRs.
-- **`/factory`** — the autonomous software-factory orchestrator: the master loop
-  that drives every other skill continuously — pick the next ticket → build
-  TDD-first on a stacked branch → `/code-review` → **auto-apply findings until the
-  bar** → stack the next on top — within a **budget**, parking at **HITL** on
-  decisions/blockers, optionally **self-feeding** new work (`--discover`). Superset
-  of `/stacked-mr` (adds the review→fix→bar loop + budget + HITL + discovery).
-  **Never merges to main/master** — the human gate is the point.
+- **`/factory`** — the continuous orchestrator: the perpetual **loop around
+  `/stacked-mr`**. Each iteration `/merge-sync` (reconcile) → run a stacked-mr pass
+  (build a stack → batch-review to the bar → handle verdicts) → optionally refill
+  the queue with discovery agents (`--discover`) → repeat, parking **HITL** on
+  decisions/blockers, until the backlog is dry or you stop. Pure orchestration — it
+  reuses every skill and **never changes the bar** or **merges to main/master**
+  (the human gate is the point). No budget — bounded by the backlog + you.
 
 ## [11] Conventions
 

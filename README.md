@@ -75,7 +75,7 @@ bootstrap.sh                  inject the workflow into an existing repo
     document/ document-audit/ knowledge base capture + rot check
     notify/                   on-demand AFK Telegram bridge
     stacked-mr/               autonomous overnight PR/MR stacking (batch-reviewed at the end)
-    factory/                  autonomous orchestrator: pick→build→review→fix-to-bar→stack, budgeted, HITL-gated
+    factory/                  continuous orchestrator: loops /stacked-mr (reconcile → pass → refill), HITL-gated
     terminal-widget/          add repo-specific TerMinal sidebar widgets
 .agents/
   forge.md                    GitHub/GitLab detection + gh↔glab command mapping

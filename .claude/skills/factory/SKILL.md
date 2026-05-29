@@ -1,187 +1,127 @@
 ---
 name: factory
-description: "Autonomous software-factory orchestrator. The master loop that continuously turns the backlog into REVIEWED, merge-ready PRs with no human in the loop — picks the next ticket, builds it TDD-first on a stacked branch, runs /code-review and auto-applies the findings until it hits the merge bar, then stacks the next on top. NEVER merges to main/master (the human gate is the point). Parks at HITL on decisions/blockers, respects a budget, and can optionally discover new work. It does not reinvent ticketing/building/review — it drives every other skill. Use when the user runs /factory or asks to run the factory / autonomously work the backlog / build the whole queue."
+description: "Continuous autonomous orchestrator — the perpetual loop around /stacked-mr. /stacked-mr does ONE pass (build a stack → batch-review to the bar → hand off); /factory keeps doing it: reconcile with /merge-sync, run a stacked-mr pass, optionally refill the queue with discovery agents, repeat — parking HITL on decisions/blockers, until the backlog is dry or you stop. NEVER merges to main/master (the human gate is the point). It reuses every skill; it does not reimplement build or review. Use when the user runs /factory or asks to run the factory / continuously / autonomously work the backlog until it's empty."
 ---
 
-# /factory — autonomous software-factory orchestrator
+# /factory — continuous autonomous orchestrator
 
-The master loop. Every other skill is a **tool** it calls; `/factory` is the thing
-that sequences them continuously and gates on quality. It does **not** reinvent
-ticketing, building, or review — it drives `/session-start`, `/ticket`,
-`/pr-creation`, `/test-suite`, `/code-review`, `/security-scan`, `/check`,
-`/merge-sync`, `/document`, `/notify`, and the stacked-MR model.
+The perpetual loop. `/stacked-mr` is the **primitive** — one pass: build a stack of
+PRs, batch-review them to the bar at the end, hand off. `/factory` is the **loop
+around it**: reconcile, run a stacked-mr pass, (optionally) refill the queue, repeat
+— parking HITL on anything that needs a human, until the backlog is dry or you stop.
 
-Its output is a stack of **reviewed, green, merge-ready PRs**. **The human merges.**
-The factory never touches `main`/`master` (global §8, hook-enforced) — that gate is
-the whole design: full autonomy *up to* merge, a human *at* merge.
-
-> Relationship to `/stacked-mr`: they share the stacking core. `/stacked-mr` is the
-> simple "build one overnight stack" entry. `/factory` is the continuous, gated,
-> budgeted **superset** — it adds the autonomous review→fix→re-review-to-the-bar
-> loop, budget/safety caps, HITL parking, and (optional) self-feeding discovery.
+It **reuses** every skill — especially `/stacked-mr` (the build + batch-review
+engine), `/merge-sync` (reconcile), the discovery agents (refill), and `/notify`
+(AFK). It adds **no new build/review logic and no new quality gate** — the bar lives
+in `/stacked-mr`. Output is reviewed, merge-ready stacks; **the human merges**
+(global §8, hook-enforced).
 
 ## [1] Invocation
 
 ```
-/factory                      # work the now/next backlog by priority, to the bar
-/factory "vault + payments"   # scope to a goal (only matching tickets)
-/factory --budget 2m          # stop after ~2M output tokens (default: confirm a cap first)
-/factory --max-stack 12       # cap stack depth (default 20)
-/factory --max-fix 3          # max review→fix cycles per PR before "stuck" (default 3)
-/factory --discover           # when the queue empties, run discovery agents to file more work
+/factory                      # loop the now/next backlog until it's dry
+/factory "vault + payments"   # scope to a goal (passed through to each pass)
+/factory --discover           # when the queue empties, refill from discovery agents instead of stopping
+/factory --max-stack 12       # cap each stacked-mr pass's depth (default: stacked-mr's default)
 ```
 
-This is an AFK mode: **arm `/notify`** at kickoff, ping at checkpoints and on every
-HITL/blocker/stop. Keep a live ledger in the session doc; refresh
-`.claude/bin/status > .status.md` after each ticket.
+AFK mode: **arm `/notify`** at kickoff; ping at each pass boundary and on every
+HITL/blocker/stop.
 
 ## [2] The loop
 
 ```
-preflight  →  reconcile  →  ┌─ pick → build → review→fix→bar → stack ─┐  →  handoff
-                            └──────────── repeat ─────────────────────┘
+   ┌─► /merge-sync (reconcile)
+   │        │
+   │        ▼
+   │   /stacked-mr pass  (build the stack → batch-review to the bar → handle verdicts)
+   │        │
+   │        ▼
+   │   in-scope queue empty?
+   │     ├─ no  ──────────────────────────────► loop
+   │     └─ yes → --discover? ─ yes → file work ─► loop
+   │                          └ no ────────────► handoff ([6])
+   └────────────────────────────────────────────┘
 ```
 
-0. **Preflight.** `/session-start` to seed the live doc + context. Confirm the repo
-   is clean and the suite is green at HEAD (if red, fix or stop — never build on red).
-   Confirm a budget cap (see [6]); arm `/notify`.
-1. **Reconcile.** Run `/merge-sync` so the backlog matches reality (close merged,
-   fix drift) before picking work — see CLAUDE.md [4.1].
-2. **Loop** until a stop condition ([9]):
-   - **Pick** the next ticket ([5]). None left → discovery ([8]) or stop.
-   - **Build** it: cut a stacked branch off the current tip (base = parent branch),
-     `/pr-creation` (TDD-first), push, open the PR, link it into the ticket. Set the
-     ticket `in-progress`.
-   - **Review → fix → bar** ([3]): `/code-review`; if `request-changes`/`blocked`,
-     apply each finding's fix prompt, push, re-review — repeat until the bar OR
-     `--max-fix` cycles. Can't reach the bar → mark the ticket `stuck`, park HITL,
-     move on.
-   - **Stack** the next ticket on this PR's tip. If a fix changed a lower tip,
-     **restack children** (`git rebase --onto …` + `--force-with-lease` to feature
-     branches only).
-3. **Handoff** ([10]) when the loop stops.
+1. **Reconcile.** Run `/merge-sync` so the backlog is truthful — closes any PRs the
+   human merged since the last pass and fixes status drift (CLAUDE.md [4.1]).
+2. **Run a `/stacked-mr` pass** over the in-scope queue. That skill owns the
+   mechanics: build the stack (each branch off the prior tip, no per-PR review),
+   then one batch review of all PRs to the bar, then handle verdicts (fix +
+   restack). `/factory` does not duplicate any of this.
+3. **Refill or finish.** If the in-scope queue is now empty: with `--discover`, run
+   the discovery agents to file new tickets ([5]) and loop; without it, go to
+   handoff. If tickets remain, loop.
 
-## [3] Quality gates (non-negotiable) — the trust backbone
+Across passes the stack keeps growing on the prior (unmerged) tip — the human
+typically merges at the end, so reconcile mostly matters at the start of a run and
+whenever the human merges mid-run.
 
-The factory's autonomy is only safe because the gate is absolute:
+## [3] What `/factory` adds vs `/stacked-mr` (and what it does NOT)
 
-- **`/code-review` to the bar:** `verdict: approve` + `test_status: pass` + **zero
-  findings ≥ medium**. The bar is **never lowered** to make progress.
-- **Auto-fix loop:** apply each finding's copy-pasteable fix prompt, re-run the
-  suite, re-review. Up to `--max-fix` cycles per PR.
-- **Red tests anywhere → stop that line.** Never push past red; fix it or mark
-  `stuck`.
-- **Security floor:** `/security-scan` feeds the Security axis; a leaked secret is
-  an automatic hard stop (rotate first).
-- **Out of cycles → `stuck` + HITL,** not a lowered bar. A PR below the bar is
-  parked for a human, never advanced.
+| | `/stacked-mr` | `/factory` |
+|---|---|---|
+| Build + batch-review to the bar | ✅ (owns it) | reuses it |
+| Run shape | one pass, then stop | continuous loop |
+| Reconcile first (`/merge-sync`) | — | ✅ each iteration |
+| Refill the queue | — | ✅ optional (`--discover`) |
+| Quality bar | defines it | unchanged — never altered |
+| Merge to main | never | never |
 
-## [4] Stacking — the human gate is preserved
+`/factory` is **purely orchestration** — a loop + reconcile + refill + HITL. It adds
+no new way to build or review, and never changes the bar.
 
-Uses the `/stacked-mr` model: branch N+1 is cut from branch N's tip, each PR's base
-is its parent, so each review sees only that PR's delta. The factory **never merges**
-— it produces a reviewed, green stack and stops at "ready for human merge." The human
-merges bottom-up; `/merge-sync` then reconciles tickets. (Force-push only to feature
-branches, only for restacking, only `--force-with-lease`.)
+## [4] HITL — park and continue
 
-## [5] Picking work
+When a pass surfaces something a human must decide — ambiguous spec, design fork, a
+destructive/cost-bearing action, a PR that can't reach the bar after stacked-mr's
+fix cycles, or a dependency on a human-only action (approve a merge, provision
+creds, an OAuth/browser flow) — park a HITL ticket (`/ticket` with `hitl: true` +
+an `## Action needed` section), ping `/notify`, and continue independent work; pause
+only if nothing else can proceed. The human resolves it from the HITL tab; the next
+loop picks it up once unblocked.
 
-From the in-scope set (the goal, else the backlog):
+## [5] Discovery (optional — `--discover`)
 
-- **Horizon:** `now` before `next`; skip `future` unless scoped to it.
-- **Priority:** `critical` → `high` → `medium` → `low`.
-- **Skip:** `hitl` (needs a human), `stuck`, `icebox`, `closed`, and tickets whose
-  declared dependencies aren't merged yet (don't build on an unmerged dependency).
-- Set each picked ticket `in-progress` + bump `updated:` (CLAUDE.md [4.1]).
+When the in-scope queue empties, refill it instead of stopping: run the discovery
+agents (deep-audit / security-sweep / `/check` kinds) to file new `open` tickets,
+then loop. **Off by default** — `/factory` does not invent infinite scope; without
+`--discover` it drains the existing backlog and stops.
 
-## [6] Budget & safety
+## [6] Handoff
 
-An unattended loop must not run away — on tokens, time, or risk:
-
-- **Budget cap** (`--budget`, tokens/$/time): confirm one at kickoff if not given;
-  track spend; stop **cleanly** at the cap with a full handoff (never mid-PR if
-  avoidable).
-- **Caps:** `--max-stack` (depth), `--max-fix` (cycles/PR).
-- **Destructive or cost-bearing actions are NEVER autonomous** — deploys, prod data,
-  spending, new paid deps, anything irreversible → park HITL ([7]).
-- Surface spend + counts in the handoff.
-
-## [7] HITL — when to ask
-
-Park a HITL ticket (`/ticket` with `hitl: true` + an `## Action needed` section) and
-ping `/notify`, then continue independent work if any (else pause), when the factory
-hits:
-
-- an **ambiguous spec** or a **design fork** it shouldn't decide unilaterally,
-- a **destructive/cost-bearing** action ([6]),
-- a ticket it **can't get to the bar** in `--max-fix` cycles,
-- a dependency on a **human-only action** (approve a merge, provision creds, an
-  OAuth/browser flow, a product call).
-
-The human resolves these from the HITL tab; the factory picks them up on its next
-pass once they're unblocked.
-
-## [8] Discovery (optional — `--discover`)
-
-When the in-scope queue empties, instead of stopping, run the discovery agents
-(deep-audit / security-sweep / `/check` kinds) to **file new tickets** — the
-"what to build next" engine — then resume the loop. **Off by default**: don't invent
-infinite work unless asked. New tickets land as `open` for the next pass; the factory
-does not silently expand its own scope.
-
-## [9] Stop conditions
-
-- In-scope queue exhausted (and no `--discover`).
-- Budget / `--max-stack` reached.
-- A true blocker needing a human decision (parked HITL; pause that line).
-- One ticket fails to reach the bar after `--max-fix` → mark `stuck`, move on (don't
-  burn the run on one ticket).
-- The user says stop / "I'm back."
-
-## [10] Morning handoff
-
-Produce a **stack summary** in dependency order — for each: PR url, ticket id, base
-branch, latest verdict, test counts, and any `stuck`/HITL flags:
-
-```
-Factory run · 7 PRs built · 6 at the bar · 1 stuck · ~1.4M tokens
-  #1  0012-vault-create    base:main              approve  ✅ 9/9
-  #2  0013-vault-spend     base:0012-vault-create approve  ✅ 12/12
-  #3  0014-payment-link    base:0013-vault-spend  stuck    — couldn't pass auth test (HITL #0021)
-  ...
-The human merges bottom-up; run /merge-sync after.
-```
-
-The human merges bottom-up; `/merge-sync` reconciles. Capture anything learned via
-`/document`, then `/session-end`.
+Use `/stacked-mr`'s stack summary (PRs in dependency order with verdict, tests, and
+any `stuck`/HITL flags), plus a one-line factory tally (passes run, total PRs at the
+bar vs stuck). The human merges bottom-up; `/merge-sync` reconciles; capture
+learnings via `/document`; close with `/session-end`.
 
 ## Hard rules
 
-1. **Never merge to main/master** (global §8, hook-enforced). The stack waits for the
-   human. This is the point of the factory, not a limitation.
-2. **Never lower the review bar** to make progress. Below-bar work is parked, not shipped.
+1. **Never merge to main/master** (global §8, hook-enforced) — the human gate is the
+   point of the factory.
+2. **Never change the review bar** — `/stacked-mr` owns it; `/factory` only runs more
+   passes.
 3. **Destructive / cost-bearing actions → HITL,** never autonomous.
-4. **Respect the budget;** stop cleanly, hand off, don't run away.
-5. **TDD-first** on every ticket — failing test before code.
-6. **Every checkpoint emits activity** (and `/notify` on HITL/blockers) so the run is
-   observable live.
+4. **Reuse, don't reimplement** — `/factory` calls `/stacked-mr`, `/merge-sync`,
+   discovery, `/notify`; it never duplicates build/review logic.
+5. **Emit activity + `/notify`** at pass boundaries and on HITL/blockers so the run
+   is observable live.
 
 ## What this is NOT
 
-- **Not a merge bot.** It builds + reviews to the bar; humans merge.
-- **Not a bar-skipper.** The gate is absolute; that's what makes the autonomy safe.
-- **Not a replacement for `/stacked-mr`** on simple jobs — `/stacked-mr` is the
-  one-overnight-stack entry; `/factory` is the continuous, gated, budgeted, optionally
-  self-feeding superset.
-- **Not a scope inventor.** Without `--discover` it only works existing tickets.
+- **Not a build/review engine** — it's the loop *around* `/stacked-mr`.
+- **Not a merge bot** — humans merge.
+- **Not a bar-skipper** — the gate is `/stacked-mr`'s and is absolute.
+- **Not a scope inventor** — without `--discover` it only works existing tickets.
+- **Not budgeted** — there is no token/cost cap; the run is bounded by the backlog
+  (finite unless `--discover`) and by you stopping it.
 
 ## Activity
 
-Emit feed events at each checkpoint (the run is watched live in TerMinal):
-
 ```bash
-.claude/bin/activity info "Factory started · <scope>" "budget <cap>"
-# (per ticket: /pr-creation emits pr-opened, /code-review emits the verdict)
+.claude/bin/activity info "Factory started · <scope>" "looping the backlog"
+# each pass: /stacked-mr emits pr-opened + review verdicts per PR
 .claude/bin/activity blocked "Factory · HITL · #<id>" "<why / options>"
-.claude/bin/activity task-complete "Factory run complete · <N> PRs" "<X at bar, Y stuck>"
+.claude/bin/activity task-complete "Factory done · <P> passes · <N> PRs" "<X at bar, Y stuck>"
 ```
