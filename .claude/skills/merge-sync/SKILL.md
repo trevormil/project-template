@@ -90,5 +90,5 @@ auto-`/document` or file new tickets — this is pure reconciliation.
 For each ticket closed during reconciliation, emit a feed event:
 
 ```bash
-.claude/bin/activity ticket-closed "Ticket closed · #<id>" "PR !<iid> merged"
+.claude/bin/activity ticket-closed "Ticket closed · #<id>" "PR !<iid> merged" --ticket <id> --pr <iid>
 ```

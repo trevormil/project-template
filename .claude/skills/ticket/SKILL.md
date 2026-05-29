@@ -191,10 +191,10 @@ dashboard, no `flock`, no per-repo config. Commit `backlog/` (tickets +
 Emit a feed event at each ticket checkpoint:
 
 ```bash
-# on file (new ticket):
-.claude/bin/activity ticket-filed "Ticket filed · #<id>" "<title>"
+# on file (new ticket) — pass --ticket so cycle-time can link this ticket's events:
+.claude/bin/activity ticket-filed "Ticket filed · #<id>" "<title>" --ticket <id>
 # a human-need (decision/approval/creds/blocker) → the global HITL inbox (pings you):
 .claude/bin/hitl "<title>" "<action needed>"
 # when a ticket is closed:
-.claude/bin/activity ticket-closed "Ticket closed · #<id>" "<title>"
+.claude/bin/activity ticket-closed "Ticket closed · #<id>" "<title>" --ticket <id>
 ```

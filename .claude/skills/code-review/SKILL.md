@@ -112,5 +112,5 @@ test gate, findings.json diff) so are last-resort. If you do, follow
 After the review artifact is written, emit a feed event:
 
 ```bash
-.claude/bin/activity pr-verdict "Review · <verdict> · !<iid>" "<repo> @ <short_sha>"
+.claude/bin/activity pr-verdict "Review · <verdict> · !<iid>" "<repo> @ <short_sha>" --pr <iid>
 ```
