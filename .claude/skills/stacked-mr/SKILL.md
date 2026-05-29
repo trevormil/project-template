@@ -97,6 +97,36 @@ overnight sees current progress without reading the transcript.
 > data migrations) you *may* review it immediately rather than deferring — but
 > that's the exception. The default is defer-and-batch.
 
+## Context hygiene — `/compact` aggressively at checkpoints
+
+A stacked-mr run is the second-highest-bloat surface after `/factory`: per-ticket
+TDD output, push results, PR-creation bodies, then N review verdicts +
+findings + diffs. Without compaction, context dies inside Phase 2 just when you
+need clean recall of the verdicts.
+
+**Rule:** the ledger, branch state, and review artifacts are all on disk
+(`sessions/<id>/stacked-mr.md`, the forge, `.reviews/<pr>/`). The conversation
+should never become the source of truth. Compact aggressively; re-read selectively.
+
+Checkpoints — run `/compact` (or summarize-and-purge) at each:
+
+1. **Every ~3–5 tickets inside Phase 1** — the per-ticket TDD output and diffs
+   accumulate fast. After compacting, the ledger + `.status.md` carry the
+   stack state forward.
+2. **At the Phase 1 → Phase 2 boundary** — the build is done; tests/diffs from
+   the build are no longer load-bearing. Only the ledger needs to survive into
+   the review fan-out.
+3. **After collecting all batch-review verdicts**, before handling them —
+   findings/suggestions live in `.reviews/<pr>/`; keep a short per-PR verdict
+   summary (approve / request-changes / blocked + counts) and drop the rest.
+4. **After each fix + re-review** in the verdict-handling phase — the same
+   logic applies per iteration.
+
+Prefer **out-of-process delegation** so heavy steps never bloat the
+orchestrator: each `/code-review` invocation runs in its own worktree under
+`codex exec`, and the verdict is what comes back — the per-PR artifact path,
+verdict, test counts, and finding counts, not the full review transcript.
+
 ## Phase 2 — Batch-review the whole stack
 
 When the build phase ends (queue exhausted, or the user calls it), run **one

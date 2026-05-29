@@ -58,6 +58,36 @@ Across passes the stack keeps growing on the prior (unmerged) tip — the human
 typically merges at the end, so reconcile mostly matters at the start of a run and
 whenever the human merges mid-run.
 
+## [2.5] Context hygiene — `/compact` aggressively at pass boundaries
+
+A continuous loop is the *highest-bloat* surface in this workflow: each pass
+accumulates `/merge-sync` output, `/stacked-mr` build logs, per-PR diffs, test
+output, and N review verdicts. After ~2–3 passes the context is dominated by
+stale tool results that no future step will read.
+
+**Rule:** state of record lives on disk — `backlog/`, in-repo `.reviews/`, the
+ledger (`sessions/<id>/stacked-mr.md`), and the forge — so the conversation does
+*not* need to hold any of it. Compact aggressively; re-read from disk on demand.
+
+Checkpoints — at each of these, run `/compact` (or summarize-and-purge) before
+proceeding:
+
+1. **End of every loop iteration**, before the next `/merge-sync` — the only
+   thing the next iteration needs is "which tickets remain in scope," which is
+   on disk.
+2. **After `/merge-sync` returns**, before kicking off `/stacked-mr` — keep the
+   short reconcile summary, drop the per-ticket diffs it printed.
+3. **After filing a HITL item** — once `.claude/bin/hitl` has logged it, the
+   conversation context around that decision is no longer load-bearing.
+4. **Before discovery** (`--discover`) — discovery agents fan out fresh; they
+   don't benefit from prior-iteration churn.
+
+Prefer **out-of-process delegation** for heavy steps so their output never
+enters the orchestrator's context in the first place: `/code-review` already
+runs in a `codex exec` subprocess (the artifact is on disk; only the verdict
+needs to come back), and each batch review runs in its own worktree. When
+spawning sub-agents, ask them for a structured summary, not a transcript.
+
 ## [3] What `/factory` adds vs `/stacked-mr` (and what it does NOT)
 
 | | `/stacked-mr` | `/factory` |
