@@ -40,7 +40,7 @@ Human-authored docs belong elsewhere (e.g., `docs/runbooks/`, root
 
 ## Early-exit fast path
 
-State at `~/.config/TerMinal/agent-state/<host>/<repo>/auto-docs.json`:
+State at `~/.config/TerMinal/agent-state/<repo-basename>/auto-docs.json`:
 
 ```json
 { "lastScannedSha": "abc1234", "lastRunAt": ..., "filesGenerated": 9 }

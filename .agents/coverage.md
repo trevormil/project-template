@@ -21,7 +21,7 @@ modified (tests-only PRs).
 
 ## Early-exit fast path
 
-State at `~/.config/TerMinal/agent-state/<host>/<repo>/coverage.json`:
+State at `~/.config/TerMinal/agent-state/<repo-basename>/coverage.json`:
 
 ```json
 { "lastScannedSha": "abc1234", "lastRunAt": ..., "lastCoveragePct": 78.4, "flakeCount": 0 }

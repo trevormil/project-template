@@ -24,7 +24,7 @@ the 3-day-age rule). HITLs for critical CVEs. Tickets for everything else.
 
 ## Early-exit fast path
 
-State at `~/.config/TerMinal/agent-state/<host>/<repo>/deps-quality.json`:
+State at `~/.config/TerMinal/agent-state/<repo-basename>/deps-quality.json`:
 
 ```json
 {

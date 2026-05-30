@@ -28,7 +28,7 @@ small PR. Otherwise `report` — files a ticket and writes the audit artifact on
 
 ## Early-exit fast path
 
-State at `~/.config/TerMinal/agent-state/<host>/<repo>/drift.json`:
+State at `~/.config/TerMinal/agent-state/<repo-basename>/drift.json`:
 
 ```json
 { "lastScannedSha": "abc1234", "lastRunAt": ..., "lastFindings": 3 }

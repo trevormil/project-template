@@ -21,7 +21,7 @@ to `main`.
 
 ## Early-exit fast path
 
-State at `~/.config/TerMinal/agent-state/<host>/<repo>/changelog.json`:
+State at `~/.config/TerMinal/agent-state/<repo-basename>/changelog.json`:
 
 ```json
 { "lastScannedSha": "abc1234", "lastRunAt": 1700000000000, "lastEntryCount": 12 }

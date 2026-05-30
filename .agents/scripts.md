@@ -88,6 +88,7 @@ The runner exports the following env vars before exec'ing the script:
 ```
 TERMINAL_REPO        repo root (absolute)
 TERMINAL_RUN_ID      run uuid
+TERMINAL_AGENT_ID    id of this agent (used as the state key — see below)
 TERMINAL_BRANCH      worktree branch (or "main" if inPlace)
 TERMINAL_WORKTREE    worktree path (== TERMINAL_REPO if inPlace)
 TERMINAL_ENGINE      hint from sidecar / schedule override
@@ -103,9 +104,71 @@ PATH is augmented to include the TerMinal CLI helpers:
 ~/.config/TerMinal/bin/terminal-cli hitl "<title>" "<action>"
 ~/.config/TerMinal/bin/terminal-cli activity "<kind>" "<title>" "<detail>"
 ~/.config/TerMinal/bin/terminal-cli notify "<message>"
+~/.config/TerMinal/bin/terminal-cli state {get-sha,mark-main,get,set,set-sha}
 ```
 
 So a script can file a HITL with `terminal-cli hitl "Auth keys missing" "rotate in 1password"` — no need to hardcode the JSON file location.
+
+## Per-(repo, agent) state
+
+A standing problem for any agent that runs on a cadence: **what's the cheapest way to know what changed since last time?** The answer is the harness-owned state sidecar at:
+
+```
+~/.config/TerMinal/agent-state/<repo-basename>/<TERMINAL_AGENT_ID>.json
+```
+
+The state file lives **outside the repo** so cron-fired runs never dirty the working tree. The harness owns three canonical fields; scripts can set arbitrary string keys beyond that.
+
+| Field           | Set by                       | Meaning                                                         |
+|-----------------|------------------------------|-----------------------------------------------------------------|
+| `lastScannedSha`| `state set-sha` / `mark-main`| Tip of **main/master** at the end of the previous scan          |
+| `lastScannedRef`| `state mark-main`            | Which ref produced that sha (e.g. `origin/main`)                |
+| `lastRunAt`     | any write                    | ms epoch of the most recent state write                         |
+| `lastRunId`     | any write (if `TERMINAL_RUN_ID` set) | run id that produced the last write                     |
+
+### Canonical incremental-scan pattern
+
+Most cadence agents follow the same shape — exit cheaply when nothing new, do the work, record where we scanned to:
+
+```bash
+set -uo pipefail
+
+last=$(terminal-cli state get-sha)        # "" on first run
+
+# Fetch main + decide range. On first run, look back 50 commits as the default
+# "cold start" window — adjust to taste per agent (a watchdog might want a
+# tighter window, a changelog generator a wider one).
+git -C "$TERMINAL_REPO" fetch --quiet origin || true
+head=$(git -C "$TERMINAL_REPO" rev-parse origin/main 2>/dev/null \
+   || git -C "$TERMINAL_REPO" rev-parse origin/master 2>/dev/null \
+   || git -C "$TERMINAL_REPO" rev-parse HEAD)
+range="${last:-HEAD~50}..$head"
+
+if [ "$head" = "$last" ]; then
+  echo "no new commits since $last"
+  exit 0
+fi
+
+# Whatever the agent does — diff inspection, LLM-escalation, etc.
+git -C "$TERMINAL_REPO" log --oneline "$range" -- src/
+
+# … work happens here …
+
+# Record that we've now scanned through origin/main's current tip.
+terminal-cli state mark-main
+```
+
+### Storing extra fields
+
+Agents can persist anything else they need between runs — last-known coverage %, advisory feed timestamps, finding counts, etc. — under arbitrary keys:
+
+```bash
+terminal-cli state set lastCoveragePct 78.4
+terminal-cli state set flakeCount 2
+prev_pct=$(terminal-cli state get lastCoveragePct)
+```
+
+Values are JSON-decoded on read when possible, so booleans, numbers, and arrays round-trip correctly. Treat the state file as **best-effort cache, not source of truth** — if it's missing or stale, the agent should still produce a correct first-run answer (do the full scan, exit 0, mark-main).
 
 ## Schedule integration
 
