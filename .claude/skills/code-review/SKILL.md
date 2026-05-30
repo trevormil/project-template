@@ -1,116 +1,177 @@
 ---
 name: code-review
-description: "Delegate a GitHub PR review to Codex via codex exec. Codex runs the test suite first (the gate), scores six axes, and writes ONE combined artifact IN THIS REPO under .reviews/<pr>/<sha>.md plus findings.json/suggestions.json. Use when the user runs /code-review, asks to review a PR, or is preparing a PR for human merge."
+description: "Delegate a GitHub/GitLab PR review to Codex via codex exec. A deterministic preflight does the recon (PR meta, diff, tests, language histogram, surface flags, prior review state), then Codex scores six axes and writes ONE combined artifact at .reviews/<pr>/<sha>.md. Use when the user runs /code-review or asks to review a PR."
 ---
 
 # /code-review — PR review with six-axis scoring + embedded tests
 
-Produces **one combined artifact** in this repo at
-`.reviews/<pr-number>/<short_sha>.md`. The schema, scoring rubric,
-severity-based body rules, anti-slop checklist, and verdict logic are owned by
-the in-repo contract — Codex **reads [`.agents/code-review.md`](../../../.agents/code-review.md)
-before scoring** (and `.agents/testing.md` for runner detection).
+Produces **one combined artifact** at `.reviews/<pr-number>/<short_sha>.md`.
+The schema, scoring rubric, severity rules, and verdict logic live in
+[`.agents/code-review.md`](../../../.agents/code-review.md).
 
-Forge: **GitHub or GitLab**, detected per repo (`.claude/bin/forge`; command
-mapping in [`.agents/forge.md`](../../../.agents/forge.md)). Artifacts are
-**in-repo** — no central dashboard, no harness phone-home.
+Forge: **GitHub or GitLab**, auto-detected (`.claude/bin/forge`). Artifacts
+are **in-repo** — no central dashboard.
 
-## Delegate to Codex
+## Workflow (three deterministic stages around one codex call)
 
-Do **not** perform the review inside Claude. Delegate the full review to Codex
-so artifacts are produced by the standard reviewer. Run `codex exec` from this
-repo's root (`-C "$PWD"`), and pass a self-contained prompt that points Codex at
-the in-repo contract + output path. **Do not use Codex's global `/code-review`
-slash command** — it targets a different (central) artifact store; the prompt
-below keeps everything in-repo.
-
-### Rule: run in the background — review is the dev-speed bottleneck
-
-Code review is **the most common bottleneck to dev speed** in this workflow. A
-review takes **~4 minutes** (test gate + six-axis scoring + artifact write).
-Blocking the session on it is almost always the wrong call.
-
-**Default to a non-blocking background run.** Fire Codex in the background,
-surface the task id, and **immediately go do other useful work** during those
-~4 minutes — start the next ticket, open the next PR, prep follow-up fixes,
-update docs/session state. You'll be notified when the review completes; relay
-the verdict + artifact path then. **Do not poll or sleep** waiting on it — that
-just re-creates the block you were avoiding. Only stop and wait if there is
-genuinely nothing else to advance.
-
-Invoke via `Bash` with `run_in_background: true`:
-
-```bash
-codex exec -s danger-full-access -C "$PWD" "Review the PR/MR at <URL> at its current head commit. The forge is GitHub or GitLab: run .claude/bin/forge to find which, and use gh (GitHub) or glab (GitLab) per .agents/forge.md to resolve the change number, head SHA, base, and diff. Follow the review contract in .agents/code-review.md in this repo exactly: run the detected test suite first as the gate, and if tests are not green stop at a blocked test-gate artifact. Otherwise score the six axes (for the Security axis, first run the deterministic floor via .claude/skills/security-scan in diff mode and take the lower of its recommended score and your manual read), compose findings with copy-pasteable fix prompts, and pick a verdict. Write the combined artifact to .reviews/<number>/<short-sha>.md, and update .reviews/<number>/findings.json and .reviews/<number>/suggestions.json per the contract. If you spot real work that is out of scope for this change (latent bugs elsewhere, worthwhile refactors, missing test surfaces, follow-up extensions), file a backlog ticket using .claude/skills/ticket: check bin/tickets open for duplicates, allocate an id with bin/next-ticket-id, write backlog/NNNN-slug.md per EXAMPLE.md, and reference the ticket id in the artifact Suggestions section."
+```
+    1. preflight (deterministic, ~5-30s, $0)
+            ↓
+       short-circuit?  →  copy artifact / write blocked / use lite path
+            ↓
+    2. codex exec (the deep review, ~3-4 min)
+            ↓
+    3. findings-merge + compute-verdict (deterministic, ~0s, $0)
 ```
 
-`-s danger-full-access` is required: the test gate frequently binds loopback
-TCP ports, writes `/tmp`, or calls local infra. The default `workspace-write`
-sandbox blocks loopback bind and turns a passing suite into a false
-`test_status: fail` + `blocked` verdict.
+**Stage 1 — preflight (always runs, free, fast):**
 
-**Backticks footgun.** The codex prompt is passed through the shell — any
-literal backtick becomes command substitution and codex hangs reading stdin.
-Keep the prompt backtick-free (write "tsc" not the backticked form). If
-backticks are unavoidable, write the prompt to a temp file and pass
-`"$(cat /tmp/prompt.txt)"`.
+```bash
+PACKET=$(./.claude/bin/code-review-preflight "$PR_URL")
+EXIT=$?
+```
 
-### Stacked-MR batch mode
+The preflight script computes everything that doesn't need an LLM:
+PR metadata, file list, language histogram, surface flags
+(auth/migrations/routes/deps/lockfile/docs/etc.), diff_hash for cache lookup,
+runs the test suite (with result caching), reads prior `findings.json` +
+`suggestions.json`, and picks a `review_kind_hint` (`docs-only` /
+`lockfile-only` / `code`). Writes the packet to `/tmp/review-packet-<sha>.json`.
 
-In `/stacked-mr` mode this skill is invoked **once per PR as a parallel batch** at
-the end of the stack — not per-PR during the build. Each invocation is still a
-normal **single-PR** review (one URL → one preflight packet → one
-`.reviews/<number>/<sha>.md` + its own `findings.json`/`suggestions.json`). The
-`/stacked-mr` skill orchestrates the concurrency and gives each review its **own
-worktree** so the parallel reviews don't corrupt each other's checkout. Don't try
-to review N PRs in one call — there is no multi-URL mode. See
-[`.agents/code-review.md`](../../../.agents/code-review.md) → "Batch stacked-MR
-review".
+**Stage 1.5 — check for short-circuit (no codex needed):**
 
-### When to run synchronously (foreground)
+If the preflight exits with code 2, the packet's `short_circuit` field tells
+you what to do:
 
-Only when the next step depends on the verdict: the user said "wait for it",
-you're inside an explicit fix-until-approve loop, or this is the final pass
-before an imminent manual merge. When in doubt, background.
+- **`already_reviewed`** — `.reviews/<pr>/<sha>.md` already exists for this
+  exact SHA. Surface the existing artifact path; we're done.
+- **`diff_hash_match`** — a prior SHA has bit-identical diff (rebase / amend
+  / force-push without content change). Copy that artifact forward with a
+  new SHA filename and `equivalent_to: <old_sha>` in the frontmatter; we're done.
+- **`tests_red`** — fill the `blocked.md.tmpl` with test totals + tail and
+  write it to `.reviews/<pr>/<sha>.md`. No codex invocation; verdict is
+  deterministically `blocked`. We're done.
 
-### Reading background results
+Sample (for `tests_red`):
 
-When the completion notification arrives, read the task output and surface, in
-one concise message: the verdict (`approve`/`request-changes`/`blocked`), the
-artifact path (`.reviews/<pr>/<sha>.md`), test totals, and key findings
-(counts + severities). Don't replay the transcript.
+```bash
+if [ "$EXIT" -eq 2 ]; then
+  SC=$(jq -r '.short_circuit' "$PACKET")
+  case "$SC" in
+    already_reviewed) echo "✓ already reviewed: $(jq -r '.artifact' "$PACKET")"; exit 0 ;;
+    diff_hash_match)  src=$(jq -r '.source_artifact' "$PACKET")
+                      dst=".reviews/$PR/$SHORT.md"
+                      cp "$src" "$dst"
+                      sed -i '' "s/^short_sha:.*/short_sha: $SHORT/; s/^commit:.*/commit: $HEAD/" "$dst"
+                      echo "✓ diff-hash cache hit" ; exit 0 ;;
+    tests_red)        ./fill-blocked-template.sh "$PACKET" > ".reviews/$PR/$SHORT.md"
+                      exit 0 ;;
+  esac
+fi
+```
 
-### Fallback
+(Exit code 0 = continue to codex; 2 = short-circuit handled; 3 = bad URL;
+4 = no test runner detected.)
 
-Run the review directly in Claude only if `codex` is unavailable OR the user
-explicitly asks. Inline reviews lose the standard-reviewer behavior (six-axis,
-test gate, findings.json diff) so are last-resort. If you do, follow
-`.agents/code-review.md` yourself.
+**Stage 2 — codex exec (only if no short-circuit):**
 
-## Hard rules (override everything in the contract)
+Codex consumes the packet so it doesn't redo the recon. Pass the packet path
+via the externalized prompt template `prompt.md`:
 
-1. **Tests must pass.** `test_status != pass` → `verdict: blocked`. No exceptions.
-2. **Approve is earned.** Requires `test_status == pass`, zero ≥ medium
-   findings, AND a one-sentence articulation of *why* the PR is safe. If you
-   can't write that sentence, don't approve. (Per this project's bar the
-   overall score is informational — the gate is verdict + 0 medium+ + tests.)
-3. **No merge-to-main bypassing.** Any push/force-push/merge to a protected
-   branch, anything violating global §8 → automatic critical finding, verdict
-   `blocked`.
+```bash
+# Substitute placeholders into the prompt
+sed "s|{{PR_URL}}|$PR_URL|; s|{{HEAD_SHA}}|$HEAD|; s|{{SHORT_SHA}}|$SHORT|; \
+     s|{{PR_NUMBER}}|$PR|; s|{{BASE_BRANCH}}|$BASE|; s|{{PACKET_PATH}}|$PACKET|; \
+     s|{{REPO_BASENAME}}|$REPO|" \
+  .claude/skills/code-review/prompt.md > /tmp/cr-prompt-$$.txt
 
-## What this skill is NOT
+codex exec -s danger-full-access -C "$PWD" "$(cat /tmp/cr-prompt-$$.txt)"
+```
 
-- **Not the built-in `/review`** (a generic ad-hoc reviewer). This produces the
-  in-repo `.reviews/` artifact format.
-- **Not a fixer.** Findings get fix prompts; fixes happen in a follow-up commit
-  — re-run `/test-suite` to confirm green, then `/code-review` to re-score.
-- **Not standalone test-run.** Use `/test-suite` for ad-hoc runs that print to
-  chat without writing an artifact.
+The prompt instructs codex to:
+- Read the packet for recon (no shell turns to rediscover PR metadata)
+- Pull the diff with `git diff origin/<base>...<head>`
+- Score six axes per `.agents/code-review.md`
+- Run `.claude/skills/security-scan` in diff mode for the Security axis floor
+- Emit FRESH scan findings in a fenced ` ```findings-new ` JSON block at the
+  end of the artifact body (NOT the merged state — the helper handles that)
+- NOT compute verdict / merge_ready — the helper does it deterministically
+
+**Run codex in the background.** Reviews take ~3-4 minutes. Block only when
+the next step strictly depends on the verdict. Per global guidance, fire
+codex with `run_in_background: true`, surface the task id, and go do other
+useful work. When the completion notification arrives, run stage 3.
+
+**Stage 3 — finalize (deterministic):**
+
+```bash
+# Extract the ```findings-new ... ``` block codex emitted in the artifact body
+awk '/```findings-new/{f=1;next} /```/{f=0} f' ".reviews/$PR/$SHORT.md" > /tmp/findings-new-$$.json
+
+# Merge with prior findings.json — handles ids, first_seen_sha, auto-resolved
+STATS=$(./.claude/bin/findings-merge "$PR" "$HEAD" /tmp/findings-new-$$.json)
+
+# Extract scorecard from artifact frontmatter
+SCORECARD=$(yq -r '{correctness, security, architecture, conformance, quality, dependencies}' \
+  ".reviews/$PR/$SHORT.md" > /tmp/scorecard-$$.json)
+
+# Compute verdict deterministically
+TEST_STATUS=$(jq -r '.test_result.status' "$PACKET")
+VERDICT=$(./.claude/bin/compute-verdict "$PR" /tmp/scorecard-$$.json --test-status "$TEST_STATUS")
+
+# Patch verdict + merge_ready back into the artifact frontmatter
+VERDICT_VAL=$(echo "$VERDICT" | jq -r '.verdict')
+MERGE_READY=$(echo "$VERDICT" | jq -r '.merge_ready')
+RISK_TIER=$(echo "$VERDICT" | jq -r '.risk_tier')
+sed -i '' "s/^verdict:.*/verdict: $VERDICT_VAL/; s/^merge_ready:.*/merge_ready: $MERGE_READY/; \
+           s/^risk_tier:.*/risk_tier: $RISK_TIER/" ".reviews/$PR/$SHORT.md"
+```
+
+The two helper scripts eliminate the YAML-quoting class of bugs and the
+verdict-drift problem (scoring on the LLM side; verdict computed
+deterministically from rules in the contract).
+
+## Token economy (vs the prior single-codex-call flow)
+
+| Path | Cost | Wall-clock |
+|---|---|---|
+| Cached SHA (already reviewed) | $0 + 5s | 5s |
+| Diff-hash match (rebase / amend) | $0 + 10s | 10s |
+| Tests red (blocked) | $0 + 60-90s | ~tests |
+| Full review (no cache) | -20-30% codex tokens vs prior | -30-60s |
+
+## Hard rules
+
+1. **Tests must pass.** `test_status != pass` → `verdict: blocked`. The
+   preflight enforces this; codex is not invoked on red.
+2. **Approve is earned.** Requires tests pass + zero ≥ medium findings.
+   `compute-verdict` enforces; LLM can suggest a score but can't override
+   the rule.
+3. **No merge bypassing.** Push/force-push/merge to a protected branch in
+   the diff → automatic critical finding → blocked. Per global §8.
+
+## Stacked-MR batch mode
+
+`/stacked-mr` invokes this skill **once per PR as a parallel batch** at the
+end of the stack — each review still single-PR, each in its own worktree.
+Preflight runs in parallel per PR; codex calls run in parallel; helpers
+run after each codex returns. The diff-hash cache is shared via
+`.reviews/.cache/` so re-running stale stacks is near-free.
+
+## Fallback
+
+If `codex` is unavailable AND OpenRouter / claude -p are configured, the
+codex stage can be replaced by `cheapCall({model: 'claude-sonnet-4-6'})`
+with the same prompt. Inline-Claude review loses some depth — use only
+when codex is truly missing.
 
 ## Activity
 
-After the review artifact is written, emit a feed event:
+After the artifact is written:
 
 ```bash
-.claude/bin/activity pr-verdict "Review · <verdict> · !<iid>" "<repo> @ <short_sha>" --pr <iid>
+terminal-cli activity pr-verdict "Review · $VERDICT · !$PR" "$REPO @ $SHORT"
 ```
+
+(The kind is auto-inferred from the title — `pr-verdict` is the explicit
+fallback for clarity.)

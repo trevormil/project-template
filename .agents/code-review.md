@@ -12,6 +12,25 @@ so reviewers (human or agent) can see at a glance which dimension is weak.
 Treat every PR as if it ships to production at scale, even small ones.
 Security and architecture are first-class scoring axes alongside correctness.
 
+## Token-efficient reading order
+
+This contract is ~400 lines. To minimize context, read only what your current
+task needs:
+
+| If you're … | Read these sections only |
+|---|---|
+| **Scoring axes** | "Score the six axes" + the relevant axis subsection |
+| **Writing the artifact** | "Output location" + "Artifact frontmatter (required)" + "Artifact body" |
+| **Computing findings** | "Per-finding state" — but the harness helper `.claude/bin/findings-merge` handles state mgmt; you just emit fresh findings in a fenced ```findings-new ... ``` block at the end of the artifact body |
+| **Deciding verdict** | DO NOT — the helper `.claude/bin/compute-verdict` derives it deterministically from scorecard + findings + test_status. Your job is the scoring + findings; verdict is rule-driven |
+| **Stacked-MR batch** | "Batch stacked-MR review" |
+| **Severity rules** | "Severity-based body rules" |
+
+The preflight script `.claude/bin/code-review-preflight` has already done all
+the recon (PR metadata, file list, language histogram, surface flags, prior
+findings count, diff, test results). Read the packet path passed by the skill;
+don't redo this work.
+
 ## Output location
 
 ```
