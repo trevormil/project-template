@@ -22,6 +22,10 @@ tools instead of reading the schema sections below:
   whitelisted frontmatter mutation, auto-bumps `updated:`.
 - **`list_tickets({repo?, status?, type?})`** — cross-repo listing.
 - **`get_ticket({slug})`** — full body + frontmatter.
+- **`set_run_outcome({runId: $TERMINAL_RUN_ID, outcome: 'ticket-filed'})`** —
+  tag the run with its outcome so the per-agent ROI column populates. Call
+  after the ticket is filed when running as part of a scheduled / `/bg`
+  agent (skip when interactive — there's no TERMINAL_RUN_ID).
 
 The thinker work (when to file, type/priority/horizon judgment, drafting
 acceptance criteria, pushing back on weak ACs) still belongs to you. Use

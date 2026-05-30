@@ -13,6 +13,8 @@ deterministic close + scrub mutations:
 - **`list_prs({status: 'merged'})`** — find what merged since last sync.
 - **`update_ticket({slug, status: 'closed', removePrUrl: '<merged URL>'})`** —
   one call closes the ticket and scrubs the merged PR URL from `prs:`.
+- **`set_run_outcome({runId: $TERMINAL_RUN_ID, outcome: 'merged'})`** when
+  closing tickets that landed via an MR merge (scheduled/`/bg` runs only).
 
 The drift-sweep judgment rules (in-progress with no PR, closed-but-still-
 linked, long-stale open) stay below — that's the thinker work.

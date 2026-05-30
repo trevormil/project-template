@@ -19,7 +19,13 @@ activity events). Save the model-side work for the TDD + commit-boundary
 
 - **`update_ticket({slug, status: 'in-progress'})`** at branch start
 - **`update_ticket({slug, appendPrUrl: '<MR URL>'})`** after the PR opens
-- **`emit_activity({kind: 'pr-opened', title: 'PR !N · <title>', repo})`** after opening
+- **`emit_activity({title: 'PR !N opened · <title>', repo})`** after opening.
+  The kind is auto-inferred from the title via regex — no need to pass it.
+- **`set_run_outcome({runId: $TERMINAL_RUN_ID, outcome: 'pr-opened'})`** —
+  tags the AIRun with its outcome so the per-agent ROI column on the Spend
+  ledger populates. Call this AFTER the PR is open. Only meaningful when
+  this skill runs as part of a scheduled / `/bg` agent — interactive
+  invocations don't have a TERMINAL_RUN_ID.
 
 These replace the equivalent shell-script tails below.
 
