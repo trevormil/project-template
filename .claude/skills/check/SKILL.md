@@ -5,6 +5,25 @@ description: "Run a scheduled cadence agent defined by an .agents/<kind>.md spec
 
 # /check — Scheduled cadence agents
 
+## Fast path: TerMinal MCP tools for state + activity
+
+When the `terminal-harness` MCP server is registered, use these at the head +
+tail of any `/check <kind>` run instead of `terminal-cli state` shell calls:
+
+- **`get_agent_state({repo, agent: '<kind>'})`** at the start — read
+  `lastScannedSha` for the early-exit branch (no work if HEAD === last).
+- **`set_agent_state({repo, agent: '<kind>', key: 'lastScannedSha', value: '<sha>'})`**
+  at the end — record where we scanned through.
+- **`emit_activity({kind: 'check', title: '<kind> · N findings', repo})`** when
+  the run finishes (clean or findings).
+- **`file_ticket(...)`** for any escalations from the run.
+- **`file_hitl(...)`** for true blockers.
+
+These replace the equivalent shell calls; the per-kind `.agents/<kind>.md`
+delegation pattern below is unchanged.
+
+---
+
 Where `/code-review` gates a single PR, `/check` runs a **repo-level agent** on
 the whole tree at `main` HEAD — the cadence work (drift audit, coverage
 backfill, dependency hygiene, changelog maintenance, auto-docs, perf

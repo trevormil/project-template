@@ -5,6 +5,20 @@ description: "Reconcile ticket + backlog state with reality: close tickets whose
 
 # /merge-sync — Reconcile tickets with merged PRs
 
+## Fast path: TerMinal MCP tools for the mutations
+
+When the `terminal-harness` MCP server is registered, use these for the
+deterministic close + scrub mutations:
+
+- **`list_prs({status: 'merged'})`** — find what merged since last sync.
+- **`update_ticket({slug, status: 'closed', removePrUrl: '<merged URL>'})`** —
+  one call closes the ticket and scrubs the merged PR URL from `prs:`.
+
+The drift-sweep judgment rules (in-progress with no PR, closed-but-still-
+linked, long-stale open) stay below — that's the thinker work.
+
+---
+
 The merge is human-only (global §8), so after the human merges, ticket state is
 stale: tickets still say `in-progress` and still list the now-merged PR/MR in
 `prs:`. This skill closes the loop. It **never merges** — it only reads PR/MR

@@ -5,6 +5,22 @@ description: "Close a work session: reconcile what happened into the live sessio
 
 # /session-end — Close a session, leave the repo + docs clean
 
+## Fast path: TerMinal MCP tools
+
+When the `terminal-harness` MCP server is registered:
+
+- **`update_ticket({slug, status: 'closed'})`** for shipped tickets.
+- **`update_ticket({slug, removePrUrl: '<merged URL>'})`** when scrubbing
+  merged PR URLs from open tickets.
+- **`file_hitl({title, action, source: 'agent'})`** for open questions /
+  blockers that surfaced.
+- **`emit_activity({kind: 'session-end', title: '<outcome>', repo})`** at exit.
+
+The reconciliation / quality-pass / docs-candidates / follow-up-tickets
+playbook below stays — that's 95% the value of this skill.
+
+---
+
 The bookend to `/session-start`. Takes the active session doc and brings it (and
 the repo) to a clean, well-documented resting state. The single most important
 output is **proper documentation** — in the session doc, in `docs/`, and in

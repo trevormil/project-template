@@ -5,6 +5,22 @@ description: "Open a work session: allocate a session id, seed a live session do
 
 # /session-start — Open a session and seed its live doc
 
+## Fast path: TerMinal MCP tools
+
+When the `terminal-harness` MCP server is registered, use these for the
+deterministic mechanics in this skill:
+
+- **`update_ticket({slug, status: 'in-progress'})`** for each in-scope ticket
+  as soon as the session starts.
+- **`emit_activity({kind: 'session-start', title: '<goal>', repo})`** so the
+  Activity tab + Telegram feed get the start signal.
+
+The thinker work (scanning the repo for relevant tickets/research/tools,
+drafting the [2] Context section, generating the TDD checklist) stays
+model-side — that's the whole point of this skill.
+
+---
+
 Creates the **central live-state document** for a work session and front-loads
 all the context needed to work well. Invoked as:
 

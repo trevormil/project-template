@@ -10,6 +10,19 @@ in this repo's `backlog/`. **Does not auto-trigger code review** — the user
 runs `/code-review` manually when ready, usually only at the end after
 iterating, to avoid burning review cycles on every push.
 
+## Fast path: TerMinal MCP tools for the bookkeeping tail
+
+When the `terminal-harness` MCP server is registered, use these for the
+deterministic data-filing steps in this skill (status flips, PR linking,
+activity events). Save the model-side work for the TDD + commit-boundary
++ PR-body decisions that actually need judgment.
+
+- **`update_ticket({slug, status: 'in-progress'})`** at branch start
+- **`update_ticket({slug, appendPrUrl: '<MR URL>'})`** after the PR opens
+- **`emit_activity({kind: 'pr-opened', title: 'PR !N · <title>', repo})`** after opening
+
+These replace the equivalent shell-script tails below.
+
 The merge itself is human-only (global CLAUDE.md §8). This skill stops at
 "PR/MR is open" and never crosses that gate.
 

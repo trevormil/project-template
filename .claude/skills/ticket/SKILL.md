@@ -7,8 +7,34 @@ description: "Create and manage in-repo backlog tickets (markdown files with YAM
 
 A dependency-free, in-repo ticketing system. Tickets are markdown files with
 YAML frontmatter under `backlog/` at the repo root — versioned with the code,
-no external service, no dashboard. This skill is **self-contained**: it carries
-its own helper scripts and bootstraps `backlog/` on first use.
+no external service, no dashboard.
+
+## Fast path: TerMinal MCP tools (skip the rest if these are available)
+
+When the `terminal-harness` MCP server is registered (it ships with TerMinal
+and installs via Settings → Install MCP server), use these deterministic
+tools instead of reading the schema sections below:
+
+- **`file_ticket({repo, title, body?, type?, priority?, status?, source?})`** —
+  atomically allocates the next id, writes the frontmatter, returns
+  `{slug, id, path}`. No `EXAMPLE.md` read needed.
+- **`update_ticket({slug, status?, priority?, appendPrUrl?, removePrUrl?})`** —
+  whitelisted frontmatter mutation, auto-bumps `updated:`.
+- **`list_tickets({repo?, status?, type?})`** — cross-repo listing.
+- **`get_ticket({slug})`** — full body + frontmatter.
+
+The thinker work (when to file, type/priority/horizon judgment, drafting
+acceptance criteria, pushing back on weak ACs) still belongs to you. Use
+the MCP tools for the filing mechanics only — they save ~7k tokens per
+ticket vs reading SKILL.md + EXAMPLE.md.
+
+The shell-helper path below stays as a fallback for repos where the MCP
+server isn't installed.
+
+---
+
+This skill is **self-contained**: it carries its own helper scripts and
+bootstraps `backlog/` on first use.
 
 ## Where tickets live
 
