@@ -21,16 +21,13 @@ playbook below stays — that's 95% the value of this skill.
 
 ---
 
-The bookend to `/session-start`. Takes the active session doc and brings it (and
-the repo) to a clean, well-documented resting state. The single most important
-output is **proper documentation** — in the session doc, in `docs/`, and in
-runbooks — so nothing learned this session is lost.
+Bookend to `/session-start`. Brings the active session doc + repo to a
+clean, well-documented resting state. The single most important output
+is **proper documentation** — nothing learned this session is lost.
 
-**This is not a quick wrap.** `/session-end` *starts* a closing process that is
-often **15–30 minutes of real work**: it can trigger cleanups, small refactors,
-consistency fixes, ticket filing, and documentation writes. Don't rush it or
-treat it as a one-shot summary — work through the steps until the repo and docs
-are genuinely clean. Use the session doc to track progress through the close.
+**Not a quick wrap.** Often **15–30 min of real work** — cleanups, small
+refactors, consistency fixes, ticket filing, doc writes. Work through
+the steps until the repo and docs are genuinely clean.
 
 ## Process
 
@@ -62,20 +59,17 @@ Fill the session doc:
 
 ### 3. TDD + test verification pass
 
-This workflow is TDD-first — verify it held:
-- Every behavior change shipped this session has a corresponding test. Run
-  `/test-suite` to confirm green at HEAD.
-- **Tests are adversarial, not rigged.** Spot-check that the session's new tests
-  actually pin meaningful behavior (not tautologies, weak assertions, or
-  over-mocking that would pass even if the feature were broken). A rigged test is
-  a gap, not coverage — see `.agents/testing.md` "Test quality".
-- **Features are wired (tests passing ≠ shipped).** Each feature shipped this
-  session is reachable from a real production entry point (route/CLI/job/UI/
-  export/ABI), ideally proven by an automated e2e/integration test — not just
-  unit-passing. A symbol reachable only from tests is unwired.
-- Any behavior added **without** a (meaningful) test, or shipped **unwired**, is
-  a gap → file a follow-up `/ticket` (testing type) and note it under
-  Follow-ups. Do not paper over it.
+Verify TDD held:
+- Every behavior change has a test. `/test-suite` green at HEAD.
+- **Tests are adversarial, not rigged.** Spot-check that the session's
+  new tests pin meaningful behavior — no tautologies, weak assertions,
+  or over-mocking that would pass even if broken. See
+  `.agents/testing.md` "Test quality".
+- **Features are wired** (tests passing ≠ shipped). Each shipped feature
+  is reachable from a real production entry point, ideally proven by
+  automated e2e/integration. A symbol reachable only from tests is
+  unwired.
+- Gaps → file a `/ticket` (testing type) and note under Follow-ups.
 
 ### 4. Cleanup pass
 
@@ -103,25 +97,20 @@ dev-speed bottleneck; ~4 min).
 
 ### 6. Consistency check (architecture + conventions)
 
-Verify the session's changes are consistent with the documented design — drift
-here is how a codebase rots silently:
+Verify changes are consistent with the documented design — drift is how
+codebases rot silently:
 
-- **`docs/architecture.md`** — does the code still match it? If the session
-  added/moved a folder, service, or major dep, or changed a data flow, the code
-  and the doc must agree. Reconcile by **either** fixing the code back to the
-  documented design **or** updating `architecture.md` to reflect the new reality
-  (and recording *why* as a Decision / ADR). Never leave them contradicting.
-- **ADRs (`docs/decisions/`)** — did anything this session contradict an
-  `accepted` ADR? If so, that's a deliberate decision: supersede the ADR (new
+- **`docs/architecture.md`** — does code still match? Reconcile by fixing
+  the code back to design OR updating `architecture.md` (and recording
+  *why* as an ADR). Never leave them contradicting.
+- **ADRs** — did anything contradict an `accepted` ADR? Supersede (new
   ADR with `supersedes:`) rather than silently diverging.
-- **CLAUDE.md conventions** — root + nested. Library choices, naming, error
-  handling, file organization, comment policy (global §6 + project rules). Fix
-  divergences now or file a `/ticket`.
-- **Cross-file coherence** — terminology, patterns, and abstractions introduced
-  this session match the rest of the codebase, not just internally consistent.
+- **CLAUDE.md conventions** (root + nested). Fix divergences or file a
+  `/ticket`.
+- **Cross-file coherence** — terminology/patterns match the rest of the
+  codebase.
 
-Run `/document-audit` if the session touched docs heavily — it flags broken
-refs, stale runbooks, and ADR contradictions.
+Run `/document-audit` if docs were touched heavily.
 
 ### 7. Reconcile ticket statuses (periodic cleanup)
 
@@ -175,20 +164,16 @@ documented (paths), and the top follow-ups for next session.
 
 ## Quality bar
 
-- **Nothing learned is lost.** If you can't point to where a decision/learning/
-  gotcha was written down, it isn't done.
-- **The repo is cleaner, not just bigger.** Session end removes this session's
-  cruft.
-- **Follow-ups are real tickets, not vibes.** "We should refactor X" becomes a
-  filed ticket with acceptance criteria, or it didn't happen.
+- **Nothing learned is lost** — can point to where it was written down.
+- **Repo is cleaner**, not just bigger.
+- **Follow-ups are real tickets** with acceptance criteria, not vibes.
 
 ## What NOT to do
 
-- Don't delete pre-existing code you didn't write this session (global §3).
-- Don't merge to main (global §8) — commit docs/cleanup on a branch.
-- Don't batch-dump a wall of suggested tickets — one at a time, confirm each.
-- Don't leave the session `active` with stub sections — finish or mark
-  `abandoned` with a one-line why.
+- Don't delete pre-existing code you didn't write (global §3).
+- Don't merge to main (global §8).
+- Don't batch-dump tickets — one at a time, confirm each.
+- Don't leave `active` with stub sections — finish or mark `abandoned`.
 
 ## Activity
 

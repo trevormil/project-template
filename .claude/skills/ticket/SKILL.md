@@ -1,78 +1,59 @@
 ---
 name: ticket
-description: "Create and manage in-repo backlog tickets (markdown files with YAML frontmatter under backlog/). Allocates an id atomically, writes a properly-structured backlog/NNNN-slug.md, and lists/updates/closes tickets. Self-bootstrapping and portable — drop this folder into any repo. Use when the user says /ticket, asks to file/list/close a ticket, or describes work that should be tracked."
+description: "Create and manage in-repo backlog tickets (markdown files with YAML frontmatter under backlog/). Allocates an id atomically, writes backlog/NNNN-slug.md, lists/updates/closes tickets. Self-bootstrapping, portable. Use when the user says /ticket, asks to file/list/close, or describes work that should be tracked."
 ---
 
 # /ticket — In-repo backlog tickets
 
-A dependency-free, in-repo ticketing system. Tickets are markdown files with
-YAML frontmatter under `backlog/` at the repo root — versioned with the code,
-no external service, no dashboard.
+In-repo markdown tickets at `backlog/NNNN-slug.md` — versioned with the
+code, no external service.
 
-## Fast path: TerMinal MCP tools (skip the rest if these are available)
+## Fast path: TerMinal MCP tools (skip the rest if available)
 
-When the `terminal-harness` MCP server is registered (it ships with TerMinal
-and installs via Settings → Install MCP server), use these deterministic
-tools instead of reading the schema sections below:
+When the `terminal-harness` MCP server is registered (ships with TerMinal,
+installs via Settings), use these instead of reading sections below:
 
 - **`file_ticket({repo, title, body?, type?, priority?, status?, source?})`** —
-  atomically allocates the next id, writes the frontmatter, returns
-  `{slug, id, path}`. No `EXAMPLE.md` read needed.
+  allocates next id, writes frontmatter, returns `{slug, id, path}`.
 - **`update_ticket({slug, status?, priority?, appendPrUrl?, removePrUrl?})`** —
-  whitelisted frontmatter mutation, auto-bumps `updated:`.
-- **`list_tickets({repo?, status?, type?})`** — cross-repo listing.
-- **`get_ticket({slug})`** — full body + frontmatter.
+  whitelisted mutation, auto-bumps `updated:`.
+- **`list_tickets({repo?, status?, type?})`** / **`get_ticket({slug})`**.
 - **`set_run_outcome({runId: $TERMINAL_RUN_ID, outcome: 'ticket-filed'})`** —
-  tag the run with its outcome so the per-agent ROI column populates. Call
-  after the ticket is filed when running as part of a scheduled / `/bg`
-  agent (skip when interactive — there's no TERMINAL_RUN_ID).
+  call after filing when running as a scheduled / `/bg` agent (skip when
+  interactive — no TERMINAL_RUN_ID).
 
-The thinker work (when to file, type/priority/horizon judgment, drafting
-acceptance criteria, pushing back on weak ACs) still belongs to you. Use
-the MCP tools for the filing mechanics only — they save ~7k tokens per
-ticket vs reading SKILL.md + EXAMPLE.md.
-
-The shell-helper path below stays as a fallback for repos where the MCP
-server isn't installed.
+Saves ~7k tokens vs reading SKILL.md + EXAMPLE.md. The thinker work
+(when to file, type/priority judgment, drafting ACs) still belongs to
+you. Shell-helper path below is the fallback when MCP isn't installed.
 
 ---
 
-This skill is **self-contained**: it carries its own helper scripts and
-bootstraps `backlog/` on first use.
-
 ## Where tickets live
 
-`<repo-root>/backlog/NNNN-kebab-slug.md` — one file per ticket. Canonical schema:
-[`EXAMPLE.md`](./EXAMPLE.md) (next to this skill). The counter lives in
-`backlog/.next-id`.
+`<repo-root>/backlog/NNNN-kebab-slug.md`. Schema: [`EXAMPLE.md`](./EXAMPLE.md).
+Counter at `backlog/.next-id`.
 
 ## Helper scripts (carried by this skill)
-
-Resolve paths via the repo root so they work from anywhere:
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel)"
 SKILL="$ROOT/.claude/skills/ticket"
 
-"$SKILL/bin/next-ticket-id"      # atomically allocate + print the next id (e.g. 0042)
-"$SKILL/bin/tickets"             # list all tickets
-"$SKILL/bin/tickets open"        # filter by status
-"$SKILL/bin/tickets open high"   # filter by status + priority
-"$SKILL/bin/tickets future"      # filter by horizon (extensions / future ideas)
-"$SKILL/bin/tickets open now"    # any combination — args are order-independent
+"$SKILL/bin/next-ticket-id"      # atomically allocate next id
+"$SKILL/bin/tickets"             # list all
+"$SKILL/bin/tickets open"        # by status
+"$SKILL/bin/tickets open high"   # status + priority
+"$SKILL/bin/tickets future"      # by horizon
 ```
 
-`next-ticket-id` uses a `mkdir` lock (portable, parallel-safe, no `flock`) and
-creates `backlog/` + `.next-id` if missing. Both scripts must be executable
-(`chmod +x`).
+`next-ticket-id` uses an `mkdir` lock (parallel-safe, no `flock`) and
+bootstraps `backlog/` if missing. Both must be executable.
 
 ## Routing
 
-Pick the operation from what the user asked:
-
-- **Create** ("file a ticket", "/ticket <desc>", describes trackable work) → §Create
-- **List** ("what's open", "show tickets", "/ticket list", "future ideas", "what needs me") → run `bin/tickets [status] [priority] [horizon] [hitl]`
-- **Update / close** ("close #42", "mark 0042 in-progress", "link the MR") → §Update
+- **Create** ("file a ticket", "/ticket <desc>") → §Create
+- **List** ("what's open", "future ideas") → `bin/tickets [status] [priority] [horizon]`
+- **Update / close** ("close #42", "link the MR") → §Update
 
 ---
 
@@ -80,23 +61,15 @@ Pick the operation from what the user asked:
 
 ### 1. Gather the facts
 
-Infer from context; ask once only if genuinely unclear:
+Infer from context; ask once only if genuinely unclear.
 
-- **Title** — short, action-oriented ("Add rate limit to signaling join", not "Rate limiting").
+- **Title** — short, action-oriented ("Add rate limit to signaling join").
 - **Type** — `bug` | `feature` | `security` | `docs` | `dx` | `testing` | `ux` | `performance`.
-- **Priority** — `critical` | `high` | `medium` | `low`. Don't guess silently; `medium` is a fine default but say so.
-- **Horizon** — `now` | `next` | `future`. Scope/timeline, orthogonal to priority:
-  `now` = current scope, `next` = soon, `future` = extension / out-of-scope idea.
-  Default `now`. Tickets filed by `/code-review` or `/session-end` as follow-ups
-  are usually `future` (or `next` if they should be tackled soon).
-- **HITL** — a ticket is a unit of *work*; a human-need is something else. When you
-  hit something only the human can do (approve a merge, provision creds, an
-  OAuth/browser flow, a decision/spec fork), raise it to the **global HITL inbox**
-  with `.claude/bin/hitl "<title>" "<action needed>"` (CLAUDE.md [4.2]) — that's the
-  cross-repo, Telegram-pinging queue the operator watches. (The legacy per-ticket
-  `hitl: true` flag is superseded by that inbox; don't rely on it to get attention.)
-- **Source** — `manual`, `audit`, `feedback`, an agent name (e.g. `code-review`), or a ref.
-- **Refs** (optional) — plan unit IDs (`U10`), ADRs (`ADR-0002`), or doc paths this ticket advances.
+- **Priority** — `critical` | `high` | `medium` | `low`. `medium` is a fine default; say so.
+- **Horizon** — `now` | `next` | `future`. Scope/timeline, orthogonal to priority. Default `now`.
+  `/code-review` and `/session-end` follow-ups are usually `future` or `next`.
+- **Source** — `manual`, `audit`, `feedback`, agent name (`code-review`), or a ref.
+- **Refs** (optional) — plan unit IDs (`U10`), ADRs (`ADR-0002`), doc paths.
 
 ### 2. Allocate an id
 
@@ -104,11 +77,11 @@ Infer from context; ask once only if genuinely unclear:
 id=$("$(git rev-parse --show-toplevel)/.claude/skills/ticket/bin/next-ticket-id")
 ```
 
-Never edit `.next-id` by hand — always use the script (parallel-safe).
+Never hand-edit `.next-id` — use the script.
 
 ### 3. Write the file
 
-Path: `backlog/<id>-<kebab-slug>.md` (slug = kebab title, ≤ 6 words).
+Path: `backlog/<id>-<kebab-slug>.md` (slug ≤ 6 words).
 
 ```yaml
 ---
@@ -127,7 +100,7 @@ refs: []
 ---
 ```
 
-Body (suggested; prose goes **after** the closing `---`):
+Body (prose goes **after** the closing `---`):
 
 ```markdown
 ## Description
@@ -135,96 +108,66 @@ Body (suggested; prose goes **after** the closing `---`):
 
 ## Acceptance criteria
 - <Concrete, testable bullet>
-- ...
 
 ## Design notes
-<Optional: approach, constraints, gotchas. Skip if straightforward.>
+<Optional: approach, constraints, gotchas.>
 
 ## Repro
-<Bugs only: steps to reproduce.>
-
-## Action needed
-<HITL tickets only: the exact manual step the human must take, with any links
-(PR url, console URL) and the decision/options if it's a judgment call. This is
-what gets sent to Telegram.>
+<Bugs only.>
 ```
 
-### 4. If it needs a human, raise a HITL item
+### 4. If it needs a human, raise a HITL item separately
 
-A human-need is separate from the work ticket. If the human must act (a decision,
-approval, creds, an OAuth/browser flow, a blocker), raise it to the **global HITL
-inbox** (CLAUDE.md [4.2]) — that surfaces on the badged HITL tab AND pings Telegram
-directly, even with the cockpit closed:
+Tickets track work; HITL is for human-only blockers (decisions, approvals,
+creds, OAuth/browser flows). Raise to the global inbox (CLAUDE.md [4.2]):
 
 ```bash
-.claude/bin/hitl "<title>" "<the exact action the human must take + any url/options>"
+.claude/bin/hitl "<title>" "<exact action + any url/options>"
 ```
 
-Keep it phone-readable (lead with the action; include the url). Reserve it for true
-human-needs — not review feedback or test fails inside a workflow.
+Lead with the action; include the url. Reserve for true human-needs — not
+review feedback or test fails inside a workflow (those iterate).
 
 ### 5. Confirm and stop
 
-Show the created path. Don't auto-start the work unless asked.
+Show the path. Don't auto-start the work unless asked.
 
 ---
 
-## Update / close a ticket
+## Update / close
 
-Edit the ticket file directly:
-
+Edit the file directly:
 - Change `status:` (`open` → `in-progress` → `closed`; or `stuck` / `icebox`).
 - Bump `updated:` to today.
-- When an MR/PR is opened, add its URL to `prs:`. When it merges, set
-  `status: closed`.
-- Keep prose strictly **after** the closing `---` — never inside the frontmatter
-  delimiters.
+- On MR/PR open: add the url to `prs:`. On merge: `status: closed`.
+- Prose strictly **after** the closing `---`.
 
-`bin/tickets [status]` to verify the resulting state.
+`bin/tickets [status]` to verify.
 
 ---
 
 ## Quality bar
 
-- **Acceptance criteria are testable.** "Looks good" is not a criterion;
-  "POST /join returns 429 after 100 req/min" is.
+- **Testable acceptance criteria.** "POST /join returns 429 after 100 req/min", not "looks good".
 - **One ticket = one piece of work.** Two unrelated things → two tickets.
-- **No speculative tickets.** "Maybe we should..." is not a ticket — that's a
-  doc/learning. Tickets are committed work.
+- **No speculative tickets.** "Maybe we should..." → doc/learning, not a ticket.
 
-## What NOT to do
+## Porting to a new repo
 
-- Don't allocate ids by hand-editing `.next-id` — use `bin/next-ticket-id`.
-- Don't file tickets for already-done work (document it instead).
-- Don't populate `prs:` at creation — that's set when an MR opens.
-- Don't put prose inside the frontmatter `---` delimiters.
+If bootstrapped from the workflow template, `bootstrap.sh` already
+installed it — skip. Standalone:
 
----
+1. Copy `.claude/skills/ticket/` into the target repo.
+2. `chmod +x .claude/skills/ticket/bin/*`.
+3. Add `backlog/.next-id.lock` to `.gitignore`.
 
-## Porting to a new repo (composability)
-
-The entire system is this one folder. If you bootstrapped from the workflow
-template, `bootstrap.sh` already installed it (and gitignored the lock) — skip
-this section. To add **just this skill** standalone to a non-template repo:
-
-1. Copy `.claude/skills/ticket/` into the target repo (scripts included).
-2. Ensure the scripts are executable: `chmod +x .claude/skills/ticket/bin/*`.
-3. Add `backlog/.next-id.lock` to that repo's `.gitignore`.
-
-That's it. The first `/ticket` (or any `bin/next-ticket-id` call) bootstraps
-`backlog/` + `.next-id` at the new repo's root. No external service, no
-dashboard, no `flock`, no per-repo config. Commit `backlog/` (tickets +
-`.next-id`) so the tracker travels with the code.
+First call bootstraps `backlog/` + `.next-id`. Commit `backlog/` so the
+tracker travels with the code.
 
 ## Activity
 
-Emit a feed event at each ticket checkpoint:
-
 ```bash
-# on file (new ticket) — pass --ticket so cycle-time can link this ticket's events:
 .claude/bin/activity ticket-filed "Ticket filed · #<id>" "<title>" --ticket <id>
-# a human-need (decision/approval/creds/blocker) → the global HITL inbox (pings you):
-.claude/bin/hitl "<title>" "<action needed>"
-# when a ticket is closed:
+.claude/bin/hitl "<title>" "<action needed>"  # only for human-only blockers
 .claude/bin/activity ticket-closed "Ticket closed · #<id>" "<title>" --ticket <id>
 ```
