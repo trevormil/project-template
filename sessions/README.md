@@ -10,9 +10,11 @@ files the session accumulates.
 - **End a session:** `/session-end` — reconciles outcomes, cleans up, suggests
   follow-up tickets, captures documentation, and closes the doc.
 
-Schema: [`.claude/skills/session-start/SESSION_EXAMPLE.md`](../.claude/skills/session-start/SESSION_EXAMPLE.md).
-Ids are allocated atomically via `.claude/skills/session-start/bin/next-session-id`
-(never hand-edit `.next-id`). List with `.claude/skills/session-start/bin/sessions`.
+Schema: [`.claude/skills/session-start/SESSION_EXAMPLE.md`](../.claude/skills/session-start/SESSION_EXAMPLE.md)
+(mirrored at `.codex/skills/session-start/SESSION_EXAMPLE.md`). Ids are
+allocated atomically via `.claude/skills/session-start/bin/next-session-id` or
+`.codex/skills/session-start/bin/next-session-id` (never hand-edit `.next-id`).
+List with `.claude/skills/session-start/bin/sessions` or the Codex mirror.
 
 Exactly one session should be `active` at a time — it is the single source of
 truth for in-flight work.

@@ -6,10 +6,11 @@ loop: sessions → tickets → feature branches → PRs/MRs → Codex code-revie
 human merge, with a knowledge base, TDD gate, cadence checks, and autonomous/AFK
 modes — all versioned with the code, no external tracker or dashboard.
 
-Loads on top of the global `~/.claude/CLAUDE.md` (§1–11). This repo's
-`.claude/skills/` **override** any same-named global skill (project skills win),
-so a bootstrapped repo gets the forge-agnostic, in-repo behavior even if your
-global skills are flavored differently. **Forge is per-repo**
+Loads on top of your global agent guidance (`~/.claude/CLAUDE.md` for Claude,
+Codex's AGENTS/CLAUDE fallback for Codex). This repo's `.claude/skills/` and
+`.codex/skills/` **override** any same-named global skill (project skills win),
+so a bootstrapped repo gets the forge-agnostic, in-repo behavior in either
+engine even if your global skills are flavored differently. **Forge is per-repo**
 (GitHub `gh`/"PR" or GitLab `glab`/"MR"), resolved by `.claude/bin/forge` —
 switch with `.claude/forge`. Merge to `main` is **human-only** (global §8).
 
@@ -34,9 +35,10 @@ your GitLab origin, or use `bootstrap.sh` below.)
 
 ## Skills & global setup
 
-The skills in `.claude/skills/` are **project-scoped by design** — Claude Code
-auto-loads them when you work in a repo that has them, and they reference this
-repo's own `.agents/` contracts via relative paths (`../../../.agents/…`). So:
+The skills in `.claude/skills/` and `.codex/skills/` are **project-scoped by
+design** — Claude Code and Codex auto-load their own mirrors when you work in a
+repo that has them, and they reference this repo's own `.agents/` contracts via
+relative paths (`../../../.agents/…`). So:
 
 - **A scaffolded repo needs no global-skills setup.** The workflow is bundled
   and self-contained: `/code-review`, `/check`, and `/test-suite` delegate to
@@ -77,6 +79,8 @@ bootstrap.sh                  inject the workflow into an existing repo
     stacked-mr/               autonomous overnight PR/MR stacking (batch-reviewed at the end)
     factory/                  continuous orchestrator: loops /stacked-mr (reconcile → pass → refill), HITL-gated
     terminal-widget/          add repo-specific TerMinal sidebar widgets
+.codex/
+  skills/                     mirror of .claude/skills for Codex
 .agents/
   forge.md                    GitHub/GitLab detection + gh↔glab command mapping
   code-review.md              review contract: schema, six-axis rubric, verdicts

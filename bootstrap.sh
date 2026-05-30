@@ -3,7 +3,7 @@
 #
 #   ./bootstrap.sh /path/to/target-repo
 #
-# Copies the workflow machinery (.claude skills/hooks/settings, .agents
+# Copies the workflow machinery (.claude/.codex skills, .claude hooks/settings, .agents
 # contracts, CI, docs skeleton, backlog/sessions counters, .reviews store) into
 # the target. Workflow files are overwritten (they ARE the workflow); your data
 # and existing docs are never clobbered. Anything that would clobber an existing
@@ -27,18 +27,21 @@ say() { printf '  %s\n' "$1"; }
 echo "Bootstrapping workflow into: $DST"
 
 # --- workflow machinery (overwrite — this is the workflow) -------------------
-echo "[workflow] .claude/ + .agents/ + CI"
-mkdir -p "$DST/.claude" "$DST/.agents" "$DST/.github/workflows"
+echo "[workflow] .claude/ + .codex/ + .agents/ + CI"
+mkdir -p "$DST/.claude" "$DST/.codex" "$DST/.agents" "$DST/.github/workflows"
 cp -R "$SRC/.claude/skills" "$DST/.claude/"
+cp -R "$SRC/.codex/skills" "$DST/.codex/"
 cp -R "$SRC/.claude/hooks"  "$DST/.claude/"
 cp -R "$SRC/.claude/bin"    "$DST/.claude/"
 cp "$SRC"/.agents/*.md "$DST/.agents/"
 cp "$SRC/.github/workflows/ci.yml" "$DST/.github/workflows/ci.yml"
 chmod +x "$DST/.claude/skills/ticket/bin/"* \
          "$DST/.claude/skills/session-start/bin/"* \
+         "$DST/.codex/skills/ticket/bin/"* \
+         "$DST/.codex/skills/session-start/bin/"* \
          "$DST/.claude/bin/"* \
          "$DST/.claude/hooks/"*.sh 2>/dev/null || true
-say ".claude/skills, .claude/hooks, .claude/bin, .agents, .github/workflows/ci.yml installed"
+say ".claude/skills, .codex/skills, .claude/hooks, .claude/bin, .agents, .github/workflows/ci.yml installed"
 
 # forge selector — don't clobber an existing choice
 [ -f "$DST/.claude/forge" ] || cp "$SRC/.claude/forge" "$DST/.claude/forge"
