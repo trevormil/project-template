@@ -33,6 +33,7 @@ cp -R "$SRC/.claude/skills" "$DST/.claude/"
 cp -R "$SRC/.codex/skills" "$DST/.codex/"
 cp -R "$SRC/.claude/hooks"  "$DST/.claude/"
 cp -R "$SRC/.codex/hooks"   "$DST/.codex/"
+cp "$SRC/.codex/hooks.json" "$DST/.codex/hooks.workflow.json"
 cp -R "$SRC/.claude/bin"    "$DST/.claude/"
 cp "$SRC"/.agents/*.md "$DST/.agents/"
 cp "$SRC/.github/workflows/ci.yml" "$DST/.github/workflows/ci.yml"
@@ -43,7 +44,7 @@ chmod +x "$DST/.claude/skills/ticket/bin/"* \
          "$DST/.claude/bin/"* \
          "$DST/.claude/hooks/"*.sh \
          "$DST/.codex/hooks/"*.sh 2>/dev/null || true
-say ".claude/skills, .codex/skills, .claude/hooks, .codex/hooks, .claude/bin, .agents, .github/workflows/ci.yml installed"
+say ".claude/skills, .codex/skills, .claude/hooks, .codex/hooks, .codex/hooks.workflow.json, .claude/bin, .agents, .github/workflows/ci.yml installed"
 
 # forge selector — don't clobber an existing choice
 [ -f "$DST/.claude/forge" ] || cp "$SRC/.claude/forge" "$DST/.claude/forge"
@@ -114,7 +115,8 @@ cat <<EOF
 Done. Next steps in $DST:
   1. Fill the placeholders in CLAUDE.md (or merge CLAUDE.workflow.md if present).
   2. Adapt .github/workflows/ci.yml scripts to your project.
-  3. If you had a settings.json, merge settings.workflow.json into it.
-  4. Commit the scaffold on a feature branch (never main — global §8).
-  5. Start working: /session-start "<goal>"  →  /ticket  →  /pr-creation  →  /code-review
+  3. If you had a Claude settings.json, merge settings.workflow.json into it.
+  4. Merge .codex/hooks.workflow.json into your active Codex hooks config if you want repo-local Codex completion Inbox items.
+  5. Commit the scaffold on a feature branch (never main — global §8).
+  6. Start working: /session-start "<goal>"  →  /ticket  →  /pr-creation  →  /code-review
 EOF

@@ -83,6 +83,7 @@ bootstrap.sh                  inject the workflow into an existing repo
     new-schedule/             add TerMinal launchd-backed schedules for existing agents
     terminal-widget/          add repo-specific TerMinal sidebar widgets
 .codex/
+  hooks.json                  Codex hook template to merge/install for this repo
   hooks/stop-notify.sh        Codex Stop hook mirror for completion Inbox filing
   skills/                     mirror of .claude/skills for Codex
 .agents/
