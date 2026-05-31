@@ -82,7 +82,7 @@ The **`horizon`** tag (`now` | `next` | `future`) is orthogonal to
 priority — `/code-review` and `/session-end` park out-of-scope ideas as
 `future`.
 
-### [4.2] HITL — agents reaching the human
+### [4.2] Inbox — agents reaching the human
 
 **One GLOBAL inbox**, not per-repo. Any skill/agent in any repo:
 
@@ -90,9 +90,22 @@ priority — `/code-review` and `/session-end` park out-of-scope ideas as
 .claude/bin/hitl "<title>" "<action needed>" "<optional detail>"
 ```
 
-Files to `~/.config/TerMinal/hitl.json` (the HITL tab the operator watches
-across repos), mirrors to the activity feed, **pings Telegram** directly.
-Failed cron runs auto-file one.
+Files to `~/.config/TerMinal/hitl.json` (shown as the TerMinal **Inbox** drawer
+with an unresolved count), mirrors to the activity feed, **pings Telegram**
+directly. Failed cron runs auto-file one.
+
+Claude/Codex Stop hooks also file deterministic completion Inbox items by
+default. Disable only those completion items with:
+
+```json
+{
+  "inbox": {
+    "completionHook": false
+  }
+}
+```
+
+in `~/.config/TerMinal/settings.json`. Manual/blocker Inbox filing still works.
 
 Reserve for **true human-needs** — spec forks, approvals, credentials,
 OAuth/browser flows, hard blockers. **Not** for review `request-changes`

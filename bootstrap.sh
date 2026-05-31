@@ -32,6 +32,7 @@ mkdir -p "$DST/.claude" "$DST/.codex" "$DST/.agents" "$DST/.github/workflows"
 cp -R "$SRC/.claude/skills" "$DST/.claude/"
 cp -R "$SRC/.codex/skills" "$DST/.codex/"
 cp -R "$SRC/.claude/hooks"  "$DST/.claude/"
+cp -R "$SRC/.codex/hooks"   "$DST/.codex/"
 cp -R "$SRC/.claude/bin"    "$DST/.claude/"
 cp "$SRC"/.agents/*.md "$DST/.agents/"
 cp "$SRC/.github/workflows/ci.yml" "$DST/.github/workflows/ci.yml"
@@ -40,8 +41,9 @@ chmod +x "$DST/.claude/skills/ticket/bin/"* \
          "$DST/.codex/skills/ticket/bin/"* \
          "$DST/.codex/skills/session-start/bin/"* \
          "$DST/.claude/bin/"* \
-         "$DST/.claude/hooks/"*.sh 2>/dev/null || true
-say ".claude/skills, .codex/skills, .claude/hooks, .claude/bin, .agents, .github/workflows/ci.yml installed"
+         "$DST/.claude/hooks/"*.sh \
+         "$DST/.codex/hooks/"*.sh 2>/dev/null || true
+say ".claude/skills, .codex/skills, .claude/hooks, .codex/hooks, .claude/bin, .agents, .github/workflows/ci.yml installed"
 
 # forge selector — don't clobber an existing choice
 [ -f "$DST/.claude/forge" ] || cp "$SRC/.claude/forge" "$DST/.claude/forge"

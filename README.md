@@ -64,6 +64,7 @@ bootstrap.sh                  inject the workflow into an existing repo
   bin/forge                   resolves the active forge (override > detect)
   bin/status                  prints the live human-facing status snapshot
   hooks/block-main-merge.sh   PreToolUse gate — blocks merge/push to main/master
+  hooks/stop-notify.sh        Stop hook — files completion items into TerMinal Inbox
   skills/
     ticket/                   in-repo backlog tickets (+ horizon + hitl tags)
     session-start/            open a session: seed live doc + TDD checklist
@@ -82,6 +83,7 @@ bootstrap.sh                  inject the workflow into an existing repo
     new-schedule/             add TerMinal launchd-backed schedules for existing agents
     terminal-widget/          add repo-specific TerMinal sidebar widgets
 .codex/
+  hooks/stop-notify.sh        Codex Stop hook mirror for completion Inbox filing
   skills/                     mirror of .claude/skills for Codex
 .agents/
   forge.md                    GitHub/GitLab detection + gh↔glab command mapping
