@@ -133,6 +133,10 @@ re-check the original blocker; continue when it no longer blocks. Reserve HITL
 for true human-needs — not review feedback or test fails inside a workflow
 (those iterate).
 
+If the blocker clears after a ticket was marked `stuck`, update the ticket
+status immediately: use `open` when returning it to the queue, or `in-progress`
+when actively resuming it. Stale `stuck` status is drift.
+
 ### 5. Confirm and stop
 
 Show the path. Don't auto-start the work unless asked.
@@ -143,6 +147,7 @@ Show the path. Don't auto-start the work unless asked.
 
 Edit the file directly:
 - Change `status:` (`open` → `in-progress` → `closed`; or `stuck` / `icebox`).
+- When unblocked, change `stuck` → `open` or `in-progress` immediately.
 - Bump `updated:` to today.
 - On MR/PR open: add the url to `prs:`. On merge: `status: closed`.
 - Prose strictly **after** the closing `---`.

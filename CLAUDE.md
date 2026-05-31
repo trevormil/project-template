@@ -100,7 +100,9 @@ The agent-side HITL API is append-only. Agents and skills may file Inbox items
 and query their status, but resolution is a human/operator action from TerMinal
 Inbox or Telegram Resolve. To wait on a human decision, query the item/list
 status or periodically re-check the original blocker; when it no longer blocks,
-continue the workflow. Do not self-resolve your own HITL item.
+update any related `stuck` ticket back to `open` (or `in-progress` if resuming
+it now), then continue the workflow. Do not leave stale blocked state behind.
+Do not self-resolve your own HITL item.
 
 Claude/Codex Stop hooks, and Cursor completion flows launched through TerMinal,
 can file deterministic completion Inbox items by default. Disable only those

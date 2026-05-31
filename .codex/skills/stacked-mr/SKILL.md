@@ -54,7 +54,10 @@ deferred to Phase 2.
 
 1. **Pick the next ticket** — from the goal, else backlog by horizon
    (`now`, then `next`) and priority. Skip `future` unless told. Set
-   `status: in-progress`.
+   `status: in-progress`. If a candidate is `stuck`, re-check its HITL,
+   dependency, or original blocker first; when clear, update it to
+   `in-progress` before starting, otherwise leave it `stuck` and pick another
+   runnable ticket.
 2. **Cut from the current tip:**
    ```bash
    parent="<previous branch, or origin/main for first>"

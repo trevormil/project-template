@@ -52,6 +52,9 @@ swap for `glab` on GitLab repos. Default branch: `main`.
 
 Open `backlog/<id>-*.md`. Confirm:
 - `status: open` (or `in-progress` if resuming) — if `closed`, stop and ask.
+- If `status: stuck`, re-check the blocker first. If it is clear, update the
+  ticket to `in-progress` and continue; if it still blocks, leave it `stuck`,
+  file/query HITL as needed, and pick another runnable ticket.
 - Acceptance criteria are testable. If not, push back and refine the ticket
   before starting work.
 

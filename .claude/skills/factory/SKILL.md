@@ -52,6 +52,10 @@ HITL/blocker/final state.
 
 1. **Reconcile.** Run `/merge-sync` so the backlog is truthful — closes any PRs the
    human merged since the last pass and fixes status drift (CLAUDE.md [4.1]).
+   Include stale blocker drift: for `stuck` tickets in scope, query the related
+   HITL/dependency status or re-check the original blocker. When the blocker is
+   clear, immediately update the ticket to `open` (or `in-progress` if this pass
+   is resuming it) before selecting work.
 2. **Run a `/stacked-mr` pass** over the in-scope queue. That skill owns the
    mechanics: build the stack (each branch off the prior tip, no per-PR review),
    then one batch review of all PRs to the bar, then handle verdicts (fix +
@@ -154,8 +158,11 @@ creds, an OAuth/browser flow) — raise it to the **global HITL inbox** with
 `.claude/bin/hitl "<title>" "<action needed>"` (CLAUDE.md [4.2]; this pings the
 operator), then continue independent work; pause only if nothing else can proceed.
 The human resolves it from the Inbox; later loops pick it up once unblocked by
-querying HITL status or re-checking the original blocker. Do **not** raise HITL
-for review `request-changes` — that's the iterative loop's job.
+querying HITL status or re-checking the original blocker. When it is unblocked,
+clear stale ticket state immediately: move `status: stuck` back to `open`, or to
+`in-progress` if resuming it in the current pass, and emit/log the status change.
+Do **not** raise HITL for review `request-changes` — that's the iterative loop's
+job.
 
 ## [5] Discovery (optional — `--discover`)
 

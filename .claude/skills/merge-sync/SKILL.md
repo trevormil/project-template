@@ -73,6 +73,9 @@ the same sweep `/session-end` runs):
 
 - **`in-progress` with no open PR** and no active session on it → move back to
   `open`, or to `stuck` (note why) / `icebox`. Don't leave it falsely in flight.
+- **`stuck` with a cleared blocker** (resolved HITL, closed dependency, available
+  credential/approval, or original blocker no longer reproduces) → move back to
+  `open`, or `in-progress` if resuming it now. Don't leave it falsely blocked.
 - **`closed` but still listing a `prs:` URL** → scrub the URL.
 - **Long-stale `open`** (untouched, clearly out of scope) → surface it and
   suggest `icebox`/`future`; change it only with confirmation, since `open` may
