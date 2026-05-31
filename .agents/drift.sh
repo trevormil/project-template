@@ -72,7 +72,7 @@ fi
 engine=${TERMINAL_ENGINE:-claude}
 case "$engine" in
   codex) model=${TERMINAL_MODEL:-gpt-5} ;;
-  cursor) model=${TERMINAL_MODEL:-sonnet-4} ;;
+  cursor) model=${TERMINAL_MODEL:-composer-2.5-fast} ;;
   *) model=${TERMINAL_MODEL:-sonnet} ;;
 esac
 short=$(git -C "$TERMINAL_REPO" rev-parse --short "$head")
