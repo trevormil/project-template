@@ -100,6 +100,7 @@ bootstrap.sh                  inject the workflow into an existing repo
 .github/PULL_REQUEST_TEMPLATE.md  + .gitlab/merge_request_templates/  PR/MR checklist
 .editorconfig                 uniform whitespace across editors
 .TerMinal/widgets.json   repo-specific terminal sidebar widgets
+.TerMinal/snippets.json  repo-owned quick prompt snippets (app presets stay app-owned)
 .status.md                    live human status snapshot (gitignored, generated)
 docs/
   decisions/                  ADRs (append-only; 0001 is the template)

@@ -79,7 +79,9 @@ mkdir -p "$DST/backlog" "$DST/sessions" "$DST/.reviews" "$DST/.checks"
 mkdir -p "$DST/.TerMinal"
 [ -f "$DST/.TerMinal/widgets.json" ] || \
   cp "$SRC/.TerMinal/widgets.json" "$DST/.TerMinal/widgets.json"
-say "backlog/.next-id, sessions/.next-id, .reviews + .checks READMEs, terminal widgets seeded (existing left untouched)"
+[ -f "$DST/.TerMinal/snippets.json" ] || \
+  cp "$SRC/.TerMinal/snippets.json" "$DST/.TerMinal/snippets.json"
+say "backlog/.next-id, sessions/.next-id, .reviews + .checks READMEs, terminal widgets/snippets seeded (existing left untouched)"
 
 # --- docs skeleton (seed only if absent) -------------------------------------
 echo "[docs] docs/{decisions,runbooks,learnings} + architecture.md"

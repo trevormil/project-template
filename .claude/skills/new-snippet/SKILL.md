@@ -20,14 +20,14 @@ If the user explicitly asks for a global snippet, write:
 Treat a missing file as:
 
 ```json
-{ "version": 1, "snippets": [] }
+{ "version": 2, "snippets": [] }
 ```
 
 ## Schema
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "snippets": [
     {
       "id": "kebab-case",
@@ -50,6 +50,8 @@ Treat a missing file as:
 
 ## Rules
 
+- These files are user/repo-owned. Do not copy TerMinal's built-in preset snippets into them.
+- Built-in presets are app-owned and can be hidden/restored from TerMinal Settings.
 - Do not create broad, multi-purpose snippets.
 - Do not include secrets or machine-specific paths unless the user explicitly asks.
 - Keep prompt text direct and action-oriented.
