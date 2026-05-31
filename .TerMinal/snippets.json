@@ -1,29 +1,50 @@
 {
   "version": 1,
   "snippets": [
-    {
-      "id": "continue",
-      "title": "Looks good. Continue",
-      "group": "Common",
-      "prompt": "Looks good to me. Continue."
-    },
-    {
-      "id": "status",
-      "title": "Status",
-      "group": "Common",
-      "prompt": "Give me a concise status update: what changed, what is left, and whether anything is blocked."
-    },
-    {
-      "id": "wrap-up",
-      "title": "Wrap up",
-      "group": "Common",
-      "prompt": "Finish the current task, run the relevant checks, commit if appropriate, and summarize the result."
-    },
-    {
-      "id": "tests",
-      "title": "Run checks",
-      "group": "Common",
-      "prompt": "Run the relevant typecheck/tests for this repo, fix any failures caused by the current work, and report the final result."
-    }
+    { "id": "continue", "title": "Looks good. Continue", "group": "Common", "prompt": "Looks good to me. Continue." },
+    { "id": "status", "title": "Status", "group": "Common", "prompt": "Give me a concise status update: what changed, what is left, and whether anything is blocked." },
+    { "id": "wrap-up", "title": "Wrap up", "group": "Common", "prompt": "Finish the current task, run the relevant checks, commit if appropriate, and summarize the result." },
+    { "id": "pause-summary", "title": "Pause Summary", "group": "Common", "prompt": "Pause here and summarize the current state, including changed files, decisions made, and exact next steps." },
+    { "id": "be-concise", "title": "Be Concise", "group": "Common", "prompt": "Keep the next response concise and action-oriented. Avoid extra explanation unless it changes the decision." },
+    { "id": "run-tests", "title": "Run Test Suite", "group": "Checks", "prompt": "Run the relevant test suite for this repo, fix failures caused by the current work, and report the final result." },
+    { "id": "typecheck", "title": "Typecheck", "group": "Checks", "prompt": "Run the project typecheck. Fix type errors caused by the current work, then report the result." },
+    { "id": "lint", "title": "Lint", "group": "Checks", "prompt": "Run the project lint/format checks. Fix issues caused by the current work, then report the result." },
+    { "id": "build", "title": "Build", "group": "Checks", "prompt": "Run the project build. Fix build failures caused by the current work, then report the result." },
+    { "id": "full-verify", "title": "Full Verify", "group": "Checks", "prompt": "Run typecheck, tests, and build using this repo's standard commands. Fix current-work failures and summarize the final status." },
+    { "id": "smoke-test", "title": "Smoke Test", "group": "Checks", "prompt": "Run a focused smoke test of the changed workflow or UI. Verify the user-facing behavior, then summarize what passed." },
+    { "id": "inspect-diff", "title": "Inspect Diff", "group": "Review", "prompt": "Review the current git diff carefully for bugs, unintended changes, missing tests, and style mismatches. Fix anything real." },
+    { "id": "self-review", "title": "Self Review", "group": "Review", "prompt": "Do a senior-engineer self-review of your changes. Prioritize correctness, edge cases, regressions, and missing verification." },
+    { "id": "security-review", "title": "Security Review", "group": "Review", "prompt": "Review the current changes for security issues: unsafe input handling, command execution, path traversal, secrets, auth, and dependency risk." },
+    { "id": "perf-review", "title": "Performance Review", "group": "Review", "prompt": "Review the current changes for avoidable performance issues, unnecessary polling, blocking work, memory leaks, or expensive re-renders." },
+    { "id": "ux-polish", "title": "UX Polish Pass", "group": "Review", "prompt": "Do a focused UX polish pass on the changed interface: spacing, labels, empty states, keyboard/mouse behavior, and responsive fit." },
+    { "id": "commit", "title": "Commit", "group": "Git", "prompt": "Review the diff, run the relevant checks, then commit the completed work with a clear conventional commit message." },
+    { "id": "commit-push", "title": "Commit + Push", "group": "Git", "prompt": "Review the diff, run the relevant checks, commit the completed work, and push it to the tracked branch." },
+    { "id": "git-status", "title": "Git Status", "group": "Git", "prompt": "Show me the current git status and summarize which changes are yours, which are pre-existing, and what remains uncommitted." },
+    { "id": "prep-pr", "title": "Prepare PR", "group": "Git", "prompt": "Prepare this branch for PR: verify checks, summarize changes, note tests run, and identify any risk or follow-up." },
+    { "id": "open-pr", "title": "Open PR", "group": "Git", "prompt": "If the branch is ready, open a PR/MR with a concise summary, tests run, and linked tickets. Do not merge it." },
+    { "id": "implement-ticket", "title": "Implement Ticket", "group": "Tickets", "prompt": "Implement the selected/open backlog ticket end to end. Keep changes surgical, add tests, commit, and open a PR linking the ticket." },
+    { "id": "file-ticket", "title": "File Ticket", "group": "Tickets", "prompt": "File a precise backlog ticket for the issue or follow-up we just discussed. Include context, acceptance criteria, priority, and type." },
+    { "id": "close-ticket", "title": "Close Ticket", "group": "Tickets", "prompt": "If the current work fully satisfies the related ticket, update the ticket status to closed and link the PR/commit. Otherwise mark it in-progress with a note." },
+    { "id": "split-ticket", "title": "Split Ticket", "group": "Tickets", "prompt": "If this ticket is too broad, split the remaining work into focused backlog tickets and summarize what stays in scope now." },
+    { "id": "find-next-ticket", "title": "Find Next Ticket", "group": "Tickets", "prompt": "Inspect the backlog and recommend the next highest-leverage ticket to work on, with rationale and risks." },
+    { "id": "update-docs", "title": "Update Docs", "group": "Docs", "prompt": "Update any docs affected by the current changes. Keep docs accurate and concise; do not invent behavior." },
+    { "id": "capture-decision", "title": "Capture Decision", "group": "Docs", "prompt": "If this change made a non-obvious architectural decision, write or update an ADR. Otherwise say no ADR is needed." },
+    { "id": "write-runbook", "title": "Write Runbook", "group": "Docs", "prompt": "If the current workflow involves repeatable manual operations, add or update a runbook with exact steps and verification." },
+    { "id": "docs-audit", "title": "Docs Audit", "group": "Docs", "prompt": "Check whether the docs now contradict the implementation or miss important changed behavior. Fix only directly related docs." },
+    { "id": "debug-failure", "title": "Debug Failure", "group": "Debug", "prompt": "Diagnose the latest failure from logs or test output. Identify the root cause, apply a focused fix, and rerun the failing check." },
+    { "id": "explain-error", "title": "Explain Error", "group": "Debug", "prompt": "Explain the current error in plain terms, identify the likely root cause, and propose the smallest safe fix." },
+    { "id": "add-diagnostics", "title": "Add Diagnostics", "group": "Debug", "prompt": "Add minimal diagnostics to understand the failing path, run the reproduction, then remove noisy diagnostics before finishing." },
+    { "id": "reproduce-bug", "title": "Reproduce Bug", "group": "Debug", "prompt": "Create or run a focused reproduction for the bug before fixing it. Confirm the failure, fix it, then confirm it passes." },
+    { "id": "simplify", "title": "Simplify", "group": "Refactor", "prompt": "Look for unnecessary complexity in the current changes. Simplify where it preserves behavior and improves maintainability." },
+    { "id": "remove-dead-code", "title": "Remove Dead Code", "group": "Refactor", "prompt": "Find dead code introduced or exposed by the current work. Remove only what is provably unused and verify checks still pass." },
+    { "id": "tighten-types", "title": "Tighten Types", "group": "Refactor", "prompt": "Tighten the types around the changed code without broad refactors. Avoid adding abstractions unless they remove real risk." },
+    { "id": "add-tests", "title": "Add Tests", "group": "Tests", "prompt": "Add focused tests for the changed behavior and important edge cases. Avoid implementation-mirroring assertions." },
+    { "id": "test-first", "title": "Test First", "group": "Tests", "prompt": "Before changing code further, write a failing test that captures the desired behavior or bug, verify it fails, then implement the fix." },
+    { "id": "edge-cases", "title": "Cover Edge Cases", "group": "Tests", "prompt": "Identify important edge cases for the current change and add focused coverage for the ones likely to regress." },
+    { "id": "update-snapshots", "title": "Update Snapshots", "group": "Tests", "prompt": "If snapshot or golden output changes are expected, inspect the diff carefully, update snapshots, and explain why the changes are correct." },
+    { "id": "restore-context", "title": "Restore Context", "group": "Context", "prompt": "Read the relevant local files and recent git diff, then restate the goal, current state, and next action before continuing." },
+    { "id": "handoff-note", "title": "Handoff Note", "group": "Context", "prompt": "Write a concise handoff note: goal, completed work, pending work, files changed, checks run, and any blockers." },
+    { "id": "risk-list", "title": "Risk List", "group": "Context", "prompt": "List the main risks in the current approach, ordered by severity, and recommend concrete mitigations." },
+    { "id": "decision-check", "title": "Decision Check", "group": "Context", "prompt": "Before proceeding, state the key implementation decision, alternatives considered, and why this path fits the existing codebase." }
   ]
 }

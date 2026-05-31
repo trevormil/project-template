@@ -81,6 +81,7 @@ bootstrap.sh                  inject the workflow into an existing repo
     factory/                  continuous orchestrator: loops /stacked-mr (reconcile → pass → refill), HITL-gated
     new-agent/                create repo-local TerMinal agents (.agents/<id>.sh + .json)
     new-schedule/             add TerMinal launchd-backed schedules for existing agents
+    new-snippet/              add one-click TerMinal terminal snippets
     terminal-widget/          add repo-specific TerMinal sidebar widgets
 .codex/
   hooks.json                  Codex hook template to merge/install for this repo
