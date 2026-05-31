@@ -125,8 +125,13 @@ creds, OAuth/browser flows). Raise to the global inbox (CLAUDE.md [4.2]):
 .claude/bin/hitl "<title>" "<exact action + any url/options>"
 ```
 
-Lead with the action; include the url. Reserve for true human-needs — not
-review feedback or test fails inside a workflow (those iterate).
+Lead with the action; include the url. The HITL helper is append-only from the
+agent side: it files the Inbox item, emits activity, and pings Telegram. Do not
+edit `~/.config/TerMinal/hitl.json` directly, and do not resolve your own HITL
+item. If waiting on the human, query the Inbox/list status or periodically
+re-check the original blocker; continue when it no longer blocks. Reserve HITL
+for true human-needs — not review feedback or test fails inside a workflow
+(those iterate).
 
 ### 5. Confirm and stop
 

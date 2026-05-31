@@ -109,6 +109,9 @@ PATH is augmented to include the TerMinal CLI helpers:
 ```
 
 So a script can file a HITL with `terminal-cli hitl "Auth keys missing" "rotate in 1password"` — no need to hardcode the JSON file location.
+Treat this API as append-only from agent code: it writes Inbox, emits activity,
+and pings Telegram; only the human/operator resolves the item. To wait, query
+HITL status or periodically re-check the original blocker.
 
 ## Per-(repo, agent) state
 

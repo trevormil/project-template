@@ -90,9 +90,15 @@ priority — `/code-review` and `/session-end` park out-of-scope ideas as
 .claude/bin/hitl "<title>" "<action needed>" "<optional detail>"
 ```
 
-Files to `~/.config/TerMinal/hitl.json` (shown as the TerMinal **Inbox** drawer
-with an unresolved count), mirrors to the activity feed, **pings Telegram**
-directly. Failed cron runs auto-file one.
+Use the helper only; do not write `~/.config/TerMinal/hitl.json` directly.
+It files to the TerMinal **Inbox** drawer (with an unresolved count), mirrors to
+the activity feed, and **pings Telegram** directly. Failed cron runs auto-file one.
+
+The agent-side HITL API is append-only. Agents and skills may file Inbox items
+and query their status, but resolution is a human/operator action from TerMinal
+Inbox or Telegram Resolve. To wait on a human decision, query the item/list
+status or periodically re-check the original blocker; when it no longer blocks,
+continue the workflow. Do not self-resolve your own HITL item.
 
 Claude/Codex Stop hooks, and Cursor completion flows launched through TerMinal,
 can file deterministic completion Inbox items by default. Disable only those

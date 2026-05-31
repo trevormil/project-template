@@ -3,17 +3,19 @@
 #
 #   hitl "<title>" ["<action needed>"] ["<detail>"]
 #
-# This is the primary way an agent gets the human's attention. It:
+# This is the primary append-only way an agent gets the human's attention. It:
 #   1. files a record to ~/.config/TerMinal/hitl.json — the one cross-repo Inbox
 #      the operator watches from TerMinal's top-right drawer,
 #   2. mirrors a `blocked` line to the activity feed (terminal shows it + notifies
 #      when open),
-#   3. pings Telegram directly (works even if TerMinal is closed).
+#   3. always pings Telegram directly when bot/chat are configured (works even
+#      if TerMinal is closed; not gated by the general activity notify toggle).
 #
 # Reserve it for things only a HUMAN can resolve — a decision/spec fork, an
 # approval, provisioning creds, an OAuth/browser flow, a hard blocker. Do NOT use
 # it for review request-changes or test failures inside a workflow — those are
-# iterative and the agent/factory handles them. Always exits 0.
+# iterative and the agent/factory handles them. Agents do not resolve HITL items;
+# the human/operator resolves them from TerMinal Inbox or Telegram. Always exits 0.
 set -uo pipefail
 
 TITLE="${1:-}"
@@ -61,13 +63,19 @@ try:
 except Exception:
     pass
 
-# 3. Telegram ping directly (works with the app closed)
+# 3. Telegram ping directly (works with the app closed). HITL is always loud
+# when bot/chat are configured; do not gate this on telegram.notify.
 try:
     s = json.load(open(settings_file)).get("telegram", {})
-    if s.get("notify") and s.get("botToken") and s.get("chatId"):
+    if s.get("botToken") and s.get("chatId"):
         body = json.dumps({
             "chat_id": s["chatId"],
             "text": "⛔ HITL · " + title + ((" — " + action) if action else ""),
+            "reply_markup": {
+                "inline_keyboard": [[
+                    {"text": "✅ Resolve", "callback_data": "hitl:resolve:" + item["id"]}
+                ]]
+            },
         }).encode()
         req = urllib.request.Request(
             "https://api.telegram.org/bot%s/sendMessage" % s["botToken"],

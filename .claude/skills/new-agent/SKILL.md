@@ -66,6 +66,9 @@ Rules:
 - Open a PR/MR only when the script creates concrete code changes.
 - Use `terminal-cli ticket` for findings the agent should not fix in the same run.
 - Use `terminal-cli hitl` only for true human blockers.
+- Treat HITL as append-only: do not edit `hitl.json` or resolve it from the
+  script. After filing, exit only if that lane is blocked; otherwise continue
+  independent work and periodically re-check the blocker or query HITL status.
 - Exit non-zero on real failure; `exit 0` for no-op success.
 
 ## Sidecar JSON

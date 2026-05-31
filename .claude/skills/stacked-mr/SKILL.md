@@ -1,13 +1,14 @@
 ---
 name: stacked-mr
-description: "Autonomous AFK overnight mode. Works a backlog queue as a STACK of PRs (each branch off the prior tip), TDD per ticket, NO per-PR review during build. Run ONE batch review pass at the end that fires /code-review per PR concurrently in isolated worktrees. Human reviews the whole stack in the morning. Use when the user runs /stacked-mr or asks to stack PRs overnight."
+description: "Autonomous AFK mode. Works a backlog queue as a STACK of PRs (each branch off the prior tip), TDD per ticket, NO per-PR review during build. Keep building runnable tickets until the in-scope queue is exhausted or every remaining lane is truly blocked; then run one batch review pass that fires /code-review per PR concurrently in isolated worktrees and iterate fixes to the bar. Human merges the reviewed stack. Use when the user runs /stacked-mr or asks to stack PRs."
 ---
 
 # /stacked-mr — Autonomous overnight PR stacking
 
 A long-running AFK mode. Branch N+1 is cut from branch N's tip; work keeps
-flowing without merging to `main`. The human reviews the whole stack in
-the morning and merges bottom-up (global §8).
+flowing without merging to `main`. Keep moving until the in-scope queue is
+exhausted, the user explicitly stops you, or every remaining lane is truly
+blocked on human-only action. The human reviews and merges bottom-up (global §8).
 
 **Review is batched, not per-PR.** Build the whole in-scope stack without
 firing reviews, then run **one batch pass** that fans out `/code-review`
@@ -135,17 +136,20 @@ See [`.agents/code-review.md`](../../../.agents/code-review.md) →
   main/master. If a bottom-of-stack fix restacks many children,
   re-review the affected sub-chain as a small second batch.
 
-## Stop conditions
+## Continue Conditions
 
-- In-scope backlog exhausted.
-- True blocker needing a human decision → `/notify --kind=blocked` with
-  options; pick a defensible default and continue if possible, else
-  pause that line and move to an independent ticket.
-- User says stop.
-- A PR can't reach passing after reasonable cycles → mark ticket
-  `stuck`, note why, move on.
+- In-scope backlog exhausted → run the batch review/fix phase, then summarize
+  the final stack.
+- True blocker needing a human decision → file HITL with the exact action/options,
+  pick a defensible default if safe, and continue another independent ticket.
+- User explicitly says stop → stop.
+- A PR can't reach passing after reasonable cycles → mark that ticket `stuck`,
+  note why, and move on to independent work.
 
-## Morning handoff
+Do not stop with "tell me when you're ready" language while runnable work remains.
+Compact or migrate context at phase boundaries, but keep the stack moving.
+
+## Stack Summary
 
 Produce a stack summary in dependency order:
 

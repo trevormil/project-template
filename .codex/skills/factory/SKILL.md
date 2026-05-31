@@ -1,14 +1,20 @@
 ---
 name: factory
-description: "Continuous autonomous orchestrator — the perpetual loop around /stacked-mr. /stacked-mr does ONE pass (build a stack → batch-review to the bar → hand off); /factory keeps doing it: reconcile with /merge-sync, run a stacked-mr pass, optionally refill the queue with discovery agents, repeat — parking HITL on decisions/blockers, until the backlog is dry or you stop. NEVER merges to main/master (the human gate is the point). It reuses every skill; it does not reimplement build or review. Use when the user runs /factory or asks to run the factory / continuously / autonomously work the backlog until it's empty."
+description: "Continuous autonomous orchestrator — the no-handoff loop around /stacked-mr. /stacked-mr builds and reviews runnable work to the bar; /factory keeps doing it: reconcile with /merge-sync, run a stacked-mr pass, optionally refill the queue with discovery agents, compact/migrate context, repeat — parking HITL on decisions/blockers while continuing every independent lane. NEVER stops with 'tell me when you are ready' language, and NEVER merges to main/master (the human gate is the point). It reuses every skill; it does not reimplement build or review. Use when the user runs /factory or asks to run the factory / continuously / autonomously work the backlog until it's empty."
 ---
 
 # /factory — continuous autonomous orchestrator
 
-The perpetual loop. `/stacked-mr` is the **primitive** — one pass: build a stack of
-PRs, batch-review them to the bar at the end, hand off. `/factory` is the **loop
-around it**: reconcile, run a stacked-mr pass, (optionally) refill the queue, repeat
-— parking HITL on anything that needs a human, until the backlog is dry or you stop.
+The perpetual loop. `/stacked-mr` is the **primitive**: build a stack of PRs,
+batch-review them to the bar, fix/re-review until the runnable lane is exhausted.
+`/factory` is the **loop around it**: reconcile, run a stacked-mr pass,
+(optionally) refill the queue, compact or migrate context, repeat — parking HITL
+on anything that needs a human while continuing every independent lane.
+
+Core contract: **zero handoffs while runnable work remains.** Do not stop with
+"tell me when you're ready" language. Continue until the user explicitly stops
+you, the requested goal is actually complete, or every remaining in-scope lane is
+blocked on human-only action that has already been filed to HITL.
 
 It **reuses** every skill — especially `/stacked-mr` (the build + batch-review
 engine), `/merge-sync` (reconcile), the discovery agents (refill), and `/notify`
@@ -21,12 +27,12 @@ in `/stacked-mr`. Output is reviewed, merge-ready stacks; **the human merges**
 ```
 /factory                      # loop the now/next backlog until it's dry
 /factory "vault + payments"   # scope to a goal (passed through to each pass)
-/factory --discover           # when the queue empties, refill from discovery agents instead of stopping
+/factory --discover           # when the queue empties, refill from discovery agents
 /factory --max-stack 12       # cap each stacked-mr pass's depth (default: stacked-mr's default)
 ```
 
 AFK mode: **arm `/notify`** at kickoff; ping at each pass boundary and on every
-HITL/blocker/stop.
+HITL/blocker/final state.
 
 ## [2] The loop
 
@@ -37,10 +43,10 @@ HITL/blocker/stop.
    │   /stacked-mr pass  (build the stack → batch-review to the bar → handle verdicts)
    │        │
    │        ▼
-   │   in-scope queue empty?
+   │   runnable in-scope queue empty?
    │     ├─ no  ──────────────────────────────► loop
    │     └─ yes → --discover? ─ yes → file work ─► loop
-   │                          └ no ────────────► handoff ([6])
+   │                          └ no ────────────► final state ([6])
    └────────────────────────────────────────────┘
 ```
 
@@ -50,9 +56,10 @@ HITL/blocker/stop.
    mechanics: build the stack (each branch off the prior tip, no per-PR review),
    then one batch review of all PRs to the bar, then handle verdicts (fix +
    restack). `/factory` does not duplicate any of this.
-3. **Refill or finish.** If the in-scope queue is now empty: with `--discover`, run
-   the discovery agents to file new tickets ([5]) and loop; without it, go to
-   handoff. If tickets remain, loop.
+3. **Refill or continue.** If the runnable in-scope queue is now empty: with
+   `--discover`, run the discovery agents to file new tickets ([5]) and loop;
+   without it, summarize the final state ([6]). If any runnable ticket remains,
+   loop. If one lane is blocked, file HITL for that lane and continue another.
 
 Across passes the stack keeps growing on the prior (unmerged) tip — the human
 typically merges at the end, so reconcile mostly matters at the start of a run and
@@ -129,7 +136,7 @@ Anti-patterns:
 | | `/stacked-mr` | `/factory` |
 |---|---|---|
 | Build + batch-review to the bar | ✅ (owns it) | reuses it |
-| Run shape | one pass, then stop | continuous loop |
+| Run shape | one stack over the runnable queue | continuous loop |
 | Reconcile first (`/merge-sync`) | — | ✅ each iteration |
 | Refill the queue | — | ✅ optional (`--discover`) |
 | Quality bar | defines it | unchanged — never altered |
@@ -146,22 +153,26 @@ fix cycles, or a dependency on a human-only action (approve a merge, provision
 creds, an OAuth/browser flow) — raise it to the **global HITL inbox** with
 `.claude/bin/hitl "<title>" "<action needed>"` (CLAUDE.md [4.2]; this pings the
 operator), then continue independent work; pause only if nothing else can proceed.
-The human resolves it from the HITL tab; the next loop picks it up once unblocked.
-Do **not** raise HITL for review `request-changes` — that's the iterative loop's job.
+The human resolves it from the Inbox; later loops pick it up once unblocked by
+querying HITL status or re-checking the original blocker. Do **not** raise HITL
+for review `request-changes` — that's the iterative loop's job.
 
 ## [5] Discovery (optional — `--discover`)
 
-When the in-scope queue empties, refill it instead of stopping: run the discovery
+When the in-scope queue empties, refill it when requested: run the discovery
 agents (deep-audit / security-sweep / `/check` kinds) to file new `open` tickets,
 then loop. **Off by default** — `/factory` does not invent infinite scope; without
-`--discover` it drains the existing backlog and stops.
+`--discover` it drains the existing backlog, summarizes the final state, and exits
+only because there is no runnable in-scope work left.
 
-## [6] Handoff
+## [6] Final State, Not Handoff
 
 Use `/stacked-mr`'s stack summary (PRs in dependency order with verdict, tests, and
 any `stuck`/HITL flags), plus a one-line factory tally (passes run, total PRs at the
 bar vs stuck). The human merges bottom-up; `/merge-sync` reconciles; capture
-learnings via `/document`; close with `/session-end`.
+learnings via `/document`; close with `/session-end` only when there is no
+runnable work left. This is a state report, not a request for permission to keep
+going.
 
 ## Hard rules
 
@@ -174,6 +185,8 @@ learnings via `/document`; close with `/session-end`.
    discovery, `/notify`; it never duplicates build/review logic.
 5. **Emit activity + `/notify`** at pass boundaries and on HITL/blockers so the run
    is observable live.
+6. **No handoff while runnable work remains.** Compact, spawn a new phase, or move
+   to another independent ticket, but keep the loop moving.
 
 ## What this is NOT
 
@@ -181,8 +194,8 @@ learnings via `/document`; close with `/session-end`.
 - **Not a merge bot** — humans merge.
 - **Not a bar-skipper** — the gate is `/stacked-mr`'s and is absolute.
 - **Not a scope inventor** — without `--discover` it only works existing tickets.
-- **Not budgeted** — there is no token/cost cap; the run is bounded by the backlog
-  (finite unless `--discover`) and by you stopping it.
+- **Not budgeted** — there is no token/cost cap; the run is bounded by the
+  requested scope, the runnable backlog, and explicit user stop.
 
 ## Activity
 
