@@ -7,7 +7,7 @@
 #   TERMINAL_RUN_ID     run uuid
 #   TERMINAL_BRANCH     worktree branch (or "main" if inPlace)
 #   TERMINAL_WORKTREE   worktree path
-#   TERMINAL_ENGINE     hint: claude | codex
+#   TERMINAL_ENGINE     hint: claude | codex | cursor
 #   TERMINAL_MODEL      hint: haiku/sonnet/opus/etc. (optional)
 #
 # Helpers on PATH (from ~/.config/TerMinal/bin):
@@ -50,11 +50,14 @@ if "$probe_ok"; then
   exit 0
 fi
 
-# -- Escalate. Default to a cheap model (haiku) — the escalation explains the
-# failures and asks for a small surgical fix.
-model=${TERMINAL_MODEL:-haiku}
+engine=${TERMINAL_ENGINE:-claude}
+case "$engine" in
+  codex) model=${TERMINAL_MODEL:-gpt-5} ;;
+  cursor) model=${TERMINAL_MODEL:-sonnet-4} ;;
+  *) model=${TERMINAL_MODEL:-haiku} ;;
+esac
 
-claude -p "The repo health precheck failed for $TERMINAL_REPO (branch: $TERMINAL_BRANCH).
+prompt="The repo health precheck failed for $TERMINAL_REPO (branch: $TERMINAL_BRANCH).
 
 Probe results:
 $summary
@@ -67,6 +70,16 @@ keeps the test suite green, do it: commit on this worktree's branch and open a
 PR per the project's pr-creation conventions. If the fix is non-trivial or
 risks scope creep, file a backlog ticket via \`terminal-cli ticket\` instead.
 If you're blocked entirely (missing credentials, ambiguous requirements), file
-a HITL via \`terminal-cli hitl\`." \
-  --dangerously-skip-permissions \
-  --model "$model"
+a HITL via \`terminal-cli hitl\`."
+
+case "$engine" in
+  codex)
+    codex exec -s danger-full-access -C "${TERMINAL_WORKTREE:-$TERMINAL_REPO}" --model "$model" "$prompt"
+    ;;
+  cursor)
+    cursor-agent -p --force --trust --workspace "${TERMINAL_WORKTREE:-$TERMINAL_REPO}" --model "$model" "$prompt"
+    ;;
+  *)
+    claude -p "$prompt" --dangerously-skip-permissions --model "$model"
+    ;;
+esac

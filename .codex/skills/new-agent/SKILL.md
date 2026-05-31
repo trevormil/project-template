@@ -57,6 +57,7 @@ When calling an engine from inside the script:
 ```bash
 claude -p "<prompt>" --dangerously-skip-permissions ${model:+--model "$model"}
 codex exec -s danger-full-access -C "$worktree" ${model:+--model "$model"} "<prompt>"
+cursor-agent -p --force --trust --workspace "$worktree" ${model:+--model "$model"} "<prompt>"
 ```
 
 Rules:
@@ -83,6 +84,8 @@ Rules:
 ```
 
 Set `opensPr: true` only if the agent is expected to commit and open a PR/MR.
+`engine` may be `"claude"`, `"codex"`, or `"cursor"`; use the user's selected
+engine unless the agent has a clear reason to prefer one.
 Set `inPlace: true` only for agents that intentionally mutate the current repo
 without a worktree; most agents should leave it false.
 

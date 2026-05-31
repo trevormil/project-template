@@ -48,6 +48,8 @@ Treat a missing file as `[]`. Preserve existing entries and write JSON with
 ```
 
 For script-first agents, `prompt` may be `""`; TerMinal runs the `.sh` body.
+`engine` may be `"claude"`, `"codex"`, or `"cursor"`; preserve the agent
+sidecar preference unless the user requested a different engine.
 
 ## Spec forms
 

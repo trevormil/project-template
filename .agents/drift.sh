@@ -19,7 +19,7 @@
 #   TERMINAL_RUN_ID    uuid of this run
 #   TERMINAL_BRANCH    worktree branch (or "main" if inPlace)
 #   TERMINAL_WORKTREE  worktree path
-#   TERMINAL_ENGINE    "claude" | "codex"
+#   TERMINAL_ENGINE    "claude" | "codex" | "cursor"
 #   TERMINAL_MODEL     model hint (default: sonnet for the analysis pass)
 
 set -uo pipefail
@@ -64,17 +64,22 @@ if [ -z "$non_docs" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 3. Hand the diff + the relevant docs to claude. The report-mode prompt asks
+# 3. Hand the diff + the relevant docs to the selected engine. The report-mode prompt asks
 #    for STRUCTURED findings categorized by the .agents/drift.md catalog so
 #    downstream parsing is simple: each finding becomes either a ticket or a
 #    trivial-fix PR (layer in later).
 # ---------------------------------------------------------------------------
-model=${TERMINAL_MODEL:-sonnet}
+engine=${TERMINAL_ENGINE:-claude}
+case "$engine" in
+  codex) model=${TERMINAL_MODEL:-gpt-5} ;;
+  cursor) model=${TERMINAL_MODEL:-sonnet-4} ;;
+  *) model=${TERMINAL_MODEL:-sonnet} ;;
+esac
 short=$(git -C "$TERMINAL_REPO" rev-parse --short "$head")
 mkdir -p "$TERMINAL_REPO/reports/drift"
 report="$TERMINAL_REPO/reports/drift/${short}.md"
 
-# Limit the diff size we hand to claude — 3000 lines is enough to spot drift
+# Limit the diff size we hand to the engine — 3000 lines is enough to spot drift
 # patterns without blowing the context window on huge refactors.
 diff_excerpt=$(git -C "$TERMINAL_REPO" log --stat "$range" | head -3000)
 docs_index=$(find "$TERMINAL_REPO/docs" -name '*.md' 2>/dev/null | head -50)
@@ -124,8 +129,20 @@ If you find ZERO findings, still write the report with status: ok and the
 activity event with N=0 — the artifact records the run either way.
 EOF
 
-claude -p "$(<"$prompt_file")" --dangerously-skip-permissions --model "$model"
-exit_code=$?
+case "$engine" in
+  codex)
+    codex exec -s danger-full-access -C "${TERMINAL_WORKTREE:-$TERMINAL_REPO}" --model "$model" "$(<"$prompt_file")"
+    exit_code=$?
+    ;;
+  cursor)
+    cursor-agent -p --force --trust --workspace "${TERMINAL_WORKTREE:-$TERMINAL_REPO}" --model "$model" "$(<"$prompt_file")"
+    exit_code=$?
+    ;;
+  *)
+    claude -p "$(<"$prompt_file")" --dangerously-skip-permissions --model "$model"
+    exit_code=$?
+    ;;
+esac
 
 # ---------------------------------------------------------------------------
 # 4. Mark scan complete regardless of the LLM's exit code. Re-running with a

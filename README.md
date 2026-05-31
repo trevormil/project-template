@@ -7,10 +7,11 @@ human merge, with a knowledge base, TDD gate, cadence checks, and autonomous/AFK
 modes — all versioned with the code, no external tracker or dashboard.
 
 Loads on top of your global agent guidance (`~/.claude/CLAUDE.md` for Claude,
-Codex's AGENTS/CLAUDE fallback for Codex). This repo's `.claude/skills/` and
-`.codex/skills/` **override** any same-named global skill (project skills win),
-so a bootstrapped repo gets the forge-agnostic, in-repo behavior in either
-engine even if your global skills are flavored differently. **Forge is per-repo**
+Codex's AGENTS/CLAUDE fallback for Codex, and Cursor's project rules when you
+run Cursor Agent). This repo's `.claude/skills/` and `.codex/skills/`
+**override** any same-named global skill (project skills win), so a bootstrapped
+repo gets the forge-agnostic, in-repo behavior in those native skill engines.
+TerMinal agents and schedules can also run through `cursor-agent`. **Forge is per-repo**
 (GitHub `gh`/"PR" or GitLab `glab`/"MR"), resolved by `.claude/bin/forge` —
 switch with `.claude/forge`. Merge to `main` is **human-only** (global §8).
 
@@ -38,12 +39,15 @@ your GitLab origin, or use `bootstrap.sh` below.)
 The skills in `.claude/skills/` and `.codex/skills/` are **project-scoped by
 design** — Claude Code and Codex auto-load their own mirrors when you work in a
 repo that has them, and they reference this repo's own `.agents/` contracts via
-relative paths (`../../../.agents/…`). So:
+relative paths (`../../../.agents/…`). Cursor Agent is supported by TerMinal's
+engine picker, background runs, schedules, and terminal instances; Cursor does
+not currently use the Claude/Codex skill folders as native slash skills. So:
 
 - **A scaffolded repo needs no global-skills setup.** The workflow is bundled
   and self-contained: `/code-review`, `/check`, and `/test-suite` delegate to
   Codex with self-contained prompts (they do **not** call Codex's global slash
-  commands), so they work as long as `claude` + `codex` are installed.
+  commands), so they work as long as `claude` + `codex` are installed. TerMinal
+  one-click agents may use `cursor-agent` when selected.
 - **Don't symlink these into `~/.claude/skills` / `~/.codex/skills`** — the
   relative `.agents/` refs would resolve to `~/.agents/` and break. Keep them
   per-repo.
@@ -125,6 +129,8 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full conventions: the TDD gate, the
 - [Claude Code](https://claude.com/claude-code) — runs the skills.
 - [`codex`](https://github.com/openai/codex) CLI — `/code-review`, `/check`,
   `/test-suite` delegate to it (`-s danger-full-access`).
+- [`cursor-agent`](https://cursor.com) CLI — optional TerMinal engine for
+  agents, schedules, and terminal instances.
 - `gh` **or** `glab` (authenticated, matching `.claude/forge`) — PR/MR creation
   + resolution.
 - `bun` — default toolchain (global §5).

@@ -4,15 +4,16 @@
 
 Today TerMinal has three abstractions for "run something":
 
-- **Agent**: a `prompt` string wrapped at run-time as `claude -p $prompt` or
-  `codex exec ... $prompt`.
+- **Agent**: a `prompt` string wrapped at run-time as `claude -p $prompt`,
+  `codex exec ... $prompt`, or `cursor-agent -p ... $prompt`.
 - **Schedule**: launchd wrapping an agent on a cadence.
 - **Pipeline** (proposed): a YAML graph of script + llm steps with conditionals.
 
 The pivot: collapse all three into **one** concept — an **executable file**
 (typically bash) that the runner just runs. The script chooses internally
-whether to use `claude -p`, `codex exec`, deterministic shell commands, or
-some mix. The "pipeline" is just a script with a few `if` blocks.
+whether to use `claude -p`, `codex exec`, `cursor-agent -p`, deterministic
+shell commands, or some mix. The "pipeline" is just a script with a few `if`
+blocks.
 
 This eliminates the agents-vs-pipelines distinction, gives operators the full
 power of bash + their existing toolchain, lets schedules avoid paying for an
@@ -38,7 +39,7 @@ not required — the sidecar JSON is authoritative.
 {
   "id": "health-then-fix",
   "title": "Health check + LLM fix",
-  "description": "Cheap precheck, escalate to claude only on failure.",
+  "description": "Cheap precheck, escalate to an agent engine only on failure.",
   "icon": "Activity",
   "opensPr": true,
   "inPlace": false,
@@ -188,7 +189,7 @@ script -q /dev/null env \
   "$script"
 ```
 
-PTY wrapping (`script -q /dev/null`) stays so claude/codex inside still
+PTY wrapping (`script -q /dev/null`) stays so agent CLIs inside still
 stream output to the run log.
 
 ## Compatibility & migration
@@ -196,12 +197,12 @@ stream output to the run log.
 Phase 1 (now):
 - The current `.agents/agents.json` + `prompt` model continues to work.
 - New: the runner checks for `.agents/<id>.sh` first; if found, executes it
-  with the env above; if not, falls back to building `claude -p $prompt`.
+  with the env above; if not, falls back to building the configured engine prompt command.
 
 Phase 2:
 - A `/migrate-agents` skill converts every entry in `.agents/agents.json`
   into a matching `.agents/<id>.sh` + `.agents/<id>.json` sidecar.
-- The body of each `.sh` is just the single `claude -p` / `codex exec`
+- The body of each `.sh` is just the single `claude -p` / `codex exec` / `cursor-agent -p`
   line built from the prompt + engine + model. After migration the json
   blob is just metadata.
 
@@ -212,7 +213,7 @@ Phase 3:
 ## Designer UX
 
 The designer modal stays the same: user describes what they want in natural
-language; claude/codex authors the script. The new bit is the *output*:
+language; the selected engine authors the script. The new bit is the *output*:
 
 - The designer writes both files: `<id>.sh` (executable, chmod 755) +
   `<id>.json` (metadata).

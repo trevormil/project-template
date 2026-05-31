@@ -94,8 +94,9 @@ Files to `~/.config/TerMinal/hitl.json` (shown as the TerMinal **Inbox** drawer
 with an unresolved count), mirrors to the activity feed, **pings Telegram**
 directly. Failed cron runs auto-file one.
 
-Claude/Codex Stop hooks also file deterministic completion Inbox items by
-default. Disable only those completion items with:
+Claude/Codex Stop hooks, and Cursor completion flows launched through TerMinal,
+can file deterministic completion Inbox items by default. Disable only those
+completion items with:
 
 ```json
 {
