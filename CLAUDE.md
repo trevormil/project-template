@@ -104,7 +104,7 @@ continue the workflow. Do not self-resolve your own HITL item.
 
 Claude/Codex Stop hooks, and Cursor completion flows launched through TerMinal,
 can file deterministic completion Inbox items by default. Disable only those
-completion items with:
+completion items from TerMinal Settings → Inbox, or with:
 
 ```json
 {
