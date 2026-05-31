@@ -8,8 +8,9 @@
 #      the operator watches from TerMinal's top-right drawer,
 #   2. mirrors a `blocked` line to the activity feed (terminal shows it + notifies
 #      when open),
-#   3. always pings Telegram directly when bot/chat are configured (works even
-#      if TerMinal is closed; not gated by the general activity notify toggle).
+#   3. pings Telegram directly when bot/chat are configured (works even if
+#      TerMinal is closed; not gated by the general activity notify toggle).
+#      Missing/broken Telegram is a no-op and never blocks HITL filing.
 #
 # Reserve it for things only a HUMAN can resolve — a decision/spec fork, an
 # approval, provisioning creds, an OAuth/browser flow, a hard blocker. Do NOT use
@@ -63,8 +64,9 @@ try:
 except Exception:
     pass
 
-# 3. Telegram ping directly (works with the app closed). HITL is always loud
-# when bot/chat are configured; do not gate this on telegram.notify.
+# 3. Telegram ping directly (works with the app closed). HITL is loud when
+# bot/chat are configured; do not gate this on telegram.notify. Missing/broken
+# Telegram is a no-op and never blocks HITL filing.
 try:
     s = json.load(open(settings_file)).get("telegram", {})
     if s.get("botToken") and s.get("chatId"):

@@ -92,7 +92,9 @@ priority — `/code-review` and `/session-end` park out-of-scope ideas as
 
 Use the helper only; do not write `~/.config/TerMinal/hitl.json` directly.
 It files to the TerMinal **Inbox** drawer (with an unresolved count), mirrors to
-the activity feed, and **pings Telegram** directly. Failed cron runs auto-file one.
+the activity feed, and **pings Telegram** directly when bot/chat are configured.
+If Telegram is not set up or delivery fails, filing still succeeds; Telegram is
+never a hard dependency. Failed cron runs auto-file one.
 
 The agent-side HITL API is append-only. Agents and skills may file Inbox items
 and query their status, but resolution is a human/operator action from TerMinal
