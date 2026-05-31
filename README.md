@@ -78,6 +78,8 @@ bootstrap.sh                  inject the workflow into an existing repo
     notify/                   on-demand AFK Telegram bridge
     stacked-mr/               autonomous overnight PR/MR stacking (batch-reviewed at the end)
     factory/                  continuous orchestrator: loops /stacked-mr (reconcile → pass → refill), HITL-gated
+    new-agent/                create repo-local TerMinal agents (.agents/<id>.sh + .json)
+    new-schedule/             add TerMinal launchd-backed schedules for existing agents
     terminal-widget/          add repo-specific TerMinal sidebar widgets
 .codex/
   skills/                     mirror of .claude/skills for Codex
