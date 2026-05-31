@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "snippets": [
+    {
+      "id": "continue",
+      "title": "Looks good. Continue",
+      "group": "Common",
+      "prompt": "Looks good to me. Continue."
+    },
+    {
+      "id": "status",
+      "title": "Status",
+      "group": "Common",
+      "prompt": "Give me a concise status update: what changed, what is left, and whether anything is blocked."
+    },
+    {
+      "id": "wrap-up",
+      "title": "Wrap up",
+      "group": "Common",
+      "prompt": "Finish the current task, run the relevant checks, commit if appropriate, and summarize the result."
+    },
+    {
+      "id": "tests",
+      "title": "Run checks",
+      "group": "Common",
+      "prompt": "Run the relevant typecheck/tests for this repo, fix any failures caused by the current work, and report the final result."
+    }
+  ]
+}
