@@ -11,17 +11,37 @@ durable JSON file instead of running immediately. The app watches:
 `~/.config/TerMinal/automation-inbox/new/`
 
 Files move through `processing/`, then `done/`, `failed/`, or `dead-letter/`.
-The Schedules tab's Listeners subtab shows queue counts and recent request -> action results.
+The Schedules tab's Listeners subtab shows queue counts, grouped listener
+producers, and recent request -> action results. Multiple listeners share the
+same durable inbox; give each producer a stable `listenerId`.
 Listeners are paused by default; enable them in TerMinal before relying on
 automatic processing.
 
 ## Preferred enqueue command
 
 ```bash
-terminal-cli listener enqueue '{"source":"local-script","type":"automation.requested","title":"Run repo health","repoRoot":"'"$(pwd)"'","requestedAction":{"kind":"run-agent","agentId":"health","engine":"codex","mode":"agent"}}'
+terminal-cli listener enqueue \
+  --listener local-script:repo-health \
+  --name "Local repo health" \
+  --source local-script \
+  --type automation.requested \
+  --title "Run repo health" \
+  --repo-root "$PWD" \
+  --action run-agent \
+  --agent health \
+  --engine codex
 ```
 
-You may also write a `.json` file directly into `automation-inbox/new/`.
+You may also pass raw JSON, pipe JSON on stdin, or write a `.json` file
+directly into `automation-inbox/new/`.
+
+Useful helpers:
+
+```bash
+terminal-cli listener example
+terminal-cli listener status
+terminal-cli listener dir
+```
 
 ## Envelope
 
@@ -30,6 +50,8 @@ Required:
 - `type`: event type, such as `automation.requested` or `merge_request.opened`.
 
 Recommended:
+- `listenerId`: stable producer id, such as `slack:triage` or `github:mr-watch`.
+- `listenerName`: human label shown in TerMinal.
 - `id`: stable event id. If omitted, the CLI assigns one.
 - `dedupeKey`: stable idempotency key for external events.
 - `repoRoot`: absolute repo path for actions that touch a repo.
