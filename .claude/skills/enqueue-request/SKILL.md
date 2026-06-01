@@ -1,11 +1,11 @@
 ---
-name: automation-inbox
-description: "Queue a one-off TerMinal automation inbox request. Use when an agent, script, integration, or user wants to drop a durable local request that can create Activity, tickets, HITL, agent runs, or background tasks."
+name: enqueue-request
+description: "Enqueue a one-off TerMinal automation inbox request. Use when an agent, script, integration, or user wants to queue a durable local request that can create Activity, tickets, HITL, agent runs, or background tasks."
 ---
 
-# Automation Inbox
+# Enqueue Request
 
-Use TerMinal's automation inbox for one-off durable requests. It is the
+Enqueue one-off durable requests into TerMinal's Automation Inbox. It is the
 always-on intake path for external events: use agents for manual runs, schedules
 for time-based runs, and the Automation Inbox for queued requests from scripts
 or integrations.

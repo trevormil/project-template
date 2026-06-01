@@ -142,7 +142,7 @@ validates and dedupes files, then moves them through `processing/`, `done`,
 `failed`, or `dead-letter`. The Runs tab's Automation Inbox view shows grouped
 request sources, queue counts, and recent request-to-run outcomes. Use
 `terminal-cli inbox example`, `terminal-cli inbox status`, and the
-`automation-inbox` skill for one-off requests. Use `new-inbox-source` to build a
+`enqueue-request` skill for one-off requests. Use `new-inbox-source` to build a
 durable adapter/poller/webhook bridge. Do not put arbitrary shell in inbox
 events; trigger an existing agent/script or file HITL for human approval.
 
