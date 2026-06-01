@@ -6,8 +6,8 @@
 # This is the primary append-only way an agent gets the human's attention. It:
 #   1. files a record to ~/.config/TerMinal/hitl.json — the one cross-repo Inbox
 #      the operator watches from TerMinal's top-right drawer,
-#   2. mirrors a `blocked` line to the activity feed (terminal shows it + notifies
-#      when open),
+#   2. mirrors a `blocked` line to the activity feed (terminal shows it + desktop
+#      notifies when open, without duplicating the direct Telegram ping),
 #   3. pings Telegram directly when bot/chat are configured (works even if
 #      TerMinal is closed; not gated by the general activity notify toggle).
 #      Missing/broken Telegram is a no-op and never blocks HITL filing.
@@ -60,6 +60,7 @@ try:
         f.write(json.dumps({
             "id": str(uuid.uuid4()), "ts": int(time.time() * 1000), "kind": "blocked",
             "title": "HITL · " + title, "detail": action or detail, "repo": repo, "repoRoot": root,
+            "suppressTelegram": True,
         }) + "\n")
 except Exception:
     pass
