@@ -105,6 +105,7 @@ PATH is augmented to include the TerMinal CLI helpers:
 ~/.config/TerMinal/bin/terminal-cli hitl "<title>" "<action>"
 ~/.config/TerMinal/bin/terminal-cli activity "<kind>" "<title>" "<detail>"
 ~/.config/TerMinal/bin/terminal-cli notify "<message>"
+~/.config/TerMinal/bin/terminal-cli listener enqueue '<json-envelope>'
 ~/.config/TerMinal/bin/terminal-cli state {get-sha,mark-main,get,set,set-sha}
 ```
 
@@ -112,6 +113,13 @@ So a script can file a HITL with `terminal-cli hitl "Auth keys missing" "rotate 
 Treat this API as append-only from agent code: it writes Inbox, emits activity,
 and pings Telegram; only the human/operator resolves the item. To wait, query
 HITL status or periodically re-check the original blocker.
+
+Use `terminal-cli listener enqueue` when a script should request follow-up work
+without running it inline. It writes a durable JSON event to
+`~/.config/TerMinal/automation-inbox/new/`; TerMinal's Schedules tab shows the
+request moving through `processing/`, `done/`, `failed`, or `dead-letter` and
+links listener-triggered runs. See the `listener-inbox` skill for the envelope
+schema and allowed actions.
 
 ## Per-(repo, agent) state
 

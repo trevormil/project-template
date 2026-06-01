@@ -118,6 +118,22 @@ completion items from TerMinal Settings → Inbox, or with:
 
 in `~/.config/TerMinal/settings.json`. Manual/blocker Inbox filing still works.
 
+### [4.3] Listener inbox — local automation requests
+
+For local integrations or scripts that need to request automation later, queue a
+JSON event instead of running arbitrary shell inline:
+
+```bash
+terminal-cli listener enqueue '{"source":"local-script","type":"automation.requested","repoRoot":"'"$(pwd)"'","requestedAction":{"kind":"run-agent","agentId":"health","engine":"codex"}}'
+```
+
+TerMinal watches `~/.config/TerMinal/automation-inbox/new/`, validates and
+dedupes files, then moves them through `processing/`, `done/`, `failed`, or
+`dead-letter`. The Schedules tab shows listener queue counts and recent
+request-to-run outcomes. Use the `listener-inbox` skill for the schema and
+allowed actions. Do not put arbitrary shell in listener events; trigger an
+existing agent/script or file HITL for human approval.
+
 Reserve for **true human-needs** — spec forks, approvals, credentials,
 OAuth/browser flows, hard blockers. **Not** for review `request-changes`
 or test failures inside a workflow — those iterate.
