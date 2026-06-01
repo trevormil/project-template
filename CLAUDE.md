@@ -121,7 +121,9 @@ in `~/.config/TerMinal/settings.json`. Manual/blocker Inbox filing still works.
 ### [4.3] Automation Inbox — local automation requests
 
 For local integrations or scripts that need to request automation later, queue a
-JSON event instead of running arbitrary shell inline:
+JSON event instead of running arbitrary shell inline. This is the always-on
+intake path: use agents for manual runs, schedules for time-based runs, and the
+Automation Inbox for external events.
 
 ```bash
 terminal-cli inbox enqueue \
@@ -135,10 +137,10 @@ terminal-cli inbox enqueue \
   --engine codex
 ```
 
-TerMinal watches `~/.config/TerMinal/automation-inbox/new/`, validates and
-dedupes files, then moves them through `processing/`, `done/`, `failed`, or
-`dead-letter`. The Runs tab's Automation Inbox view shows grouped request
-sources, queue counts, and recent request-to-run outcomes. Use
+TerMinal watches `~/.config/TerMinal/automation-inbox/new/` by default,
+validates and dedupes files, then moves them through `processing/`, `done`,
+`failed`, or `dead-letter`. The Runs tab's Automation Inbox view shows grouped
+request sources, queue counts, and recent request-to-run outcomes. Use
 `terminal-cli inbox example`, `terminal-cli inbox status`, and the
 `automation-inbox` skill for one-off requests. Use `new-inbox-source` to build a
 durable adapter/poller/webhook bridge. Do not put arbitrary shell in inbox

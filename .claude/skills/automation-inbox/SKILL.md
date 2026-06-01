@@ -5,11 +5,12 @@ description: "Queue a one-off TerMinal automation inbox request. Use when an age
 
 # Automation Inbox
 
-Use TerMinal's automation inbox for one-off durable requests. It is email for
-TerMinal: write a structured request, let the app validate/dedupe/process it,
-then inspect the request-to-run trail in Runs -> Automation Inbox.
+Use TerMinal's automation inbox for one-off durable requests. It is the
+always-on intake path for external events: use agents for manual runs, schedules
+for time-based runs, and the Automation Inbox for queued requests from scripts
+or integrations.
 
-The app watches:
+The app watches by default:
 
 `~/.config/TerMinal/automation-inbox/new/`
 
