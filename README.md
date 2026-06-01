@@ -84,6 +84,7 @@ bootstrap.sh                  inject the workflow into an existing repo
     stacked-mr/               autonomous overnight PR/MR stacking (batch-reviewed at the end)
     factory/                  continuous orchestrator: loops /stacked-mr (reconcile → pass → refill), HITL-gated
     new-agent/                create repo-local TerMinal agents (.agents/<id>.sh + .json)
+    new-persistent-agent/     create global memory-aware TerMinal agents
     new-schedule/             add TerMinal launchd-backed schedules for existing agents
     new-snippet/              add one-click TerMinal terminal snippets
     terminal-widget/          add repo-specific TerMinal sidebar widgets
