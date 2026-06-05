@@ -5,65 +5,35 @@ description: "Reconcile tickets+backlog with reality: close tickets whose PRs me
 
 # /merge-sync — Reconcile tickets with merged PRs
 
-## Fast path: TerMinal MCP tools for the mutations
-
-When the `terminal-harness` MCP server is registered, use these for the
-deterministic close + scrub mutations:
-
-- **`list_prs({status: 'merged'})`** — find what merged since last sync.
-- **`update_ticket({slug, status: 'closed', removePrUrl: '<merged URL>'})`** —
-  one call closes the ticket and scrubs the merged PR URL from `prs:`.
-- **`set_run_outcome({runId: $TERMINAL_RUN_ID, outcome: 'merged'})`** when
-  closing tickets that landed via an MR merge (scheduled/`/bg` runs only).
-
-The drift-sweep judgment rules (in-progress with no PR, closed-but-still-
-linked, long-stale open) stay below — that's the thinker work.
-
----
-
 The merge is human-only (global §8), so after the human merges, ticket state is
 stale: tickets still say `in-progress` and still list the now-merged PR/MR in
 `prs:`. This skill closes the loop. It **never merges** — it only reads PR/MR
 state from the forge and updates `backlog/` files.
 
-Forge is detected per repo: `forge="$(.claude/bin/forge)"`. Use `gh` (GitHub) or
-`glab` (GitLab) accordingly; command mapping in
-[`.agents/forge.md`](../../../.agents/forge.md). Examples below show GitHub.
-
 ## Process
 
-### 1. Find tickets with linked PRs
+### 1. Run the deterministic reconcile — `bin/merge-sync`
 
-Scan `backlog/*.md` for tickets whose `prs:` array is non-empty (any
-`status` other than `closed`).
-
-### 2. Check each linked PR's merge state
-
-For each PR/MR URL in a ticket's `prs:`:
+Steps 1–3 of the old manual flow (find tickets with linked PRs → ask the forge
+what merged → scrub merged URLs + close fully-merged tickets) are **judgment-
+free**, so a script does them in one forge call instead of N tickets × N `gh`
+round-trips:
 
 ```bash
-gh pr view <pr-url-or-number> --json state,mergedAt,number,url   # GitHub
-glab mr view <mr-number>                                         # GitLab (parse state: merged)
+.claude/bin/merge-sync            # dry-run: print the reconcile plan (read-only)
+.claude/bin/merge-sync --apply    # execute the closes + scrubs
 ```
 
-`state == "MERGED"` (GitHub, or a non-null `mergedAt`) / `state: merged`
-(GitLab) means it landed.
+It runs one `gh pr list --state merged` (or `glab mr list`, resolved via
+`.claude/bin/forge`), matches against every ticket's `prs:`, and: closes a ticket
+only when its linked PR is *actually* merged (sets `status: closed` + `updated:`
+today), scrubs merged URLs (handles all `prs:` formats), and scrubs
+`closed`-but-still-linked drift. A single PR closing multiple tickets is handled
+naturally — every ticket listing that URL reconciles. **Only** edits `backlog/`.
 
-### 3. Reconcile the ticket
-
-For each ticket whose PR(s) merged:
-
-- **Scrub** the merged PR URL from `prs:` (set `prs: []` if it was the only
-  entry). The `prs:` list is for *active* tracking — git history preserves the
-  trail.
-- If **all** of the ticket's PRs have merged and the work is complete, set
-  `status: closed` and bump `updated:` to today.
-- If a ticket had multiple PRs and only some merged, scrub the merged ones but
-  leave `status` as-is (work continues on the rest).
-- A single PR may close **multiple tickets** (its body listed `Closes #a #b`) —
-  close each linked ticket, not just one.
-
-Leave tickets whose PRs are still open/closed-unmerged untouched.
+Review the dry-run plan first; run `--apply` when it looks right. For tickets
+that landed via a scheduled/`/bg` MR merge, also call
+`set_run_outcome({runId: $TERMINAL_RUN_ID, outcome: 'merged'})` (MCP).
 
 ### 4. Sweep for drift (periodic cleanup)
 
