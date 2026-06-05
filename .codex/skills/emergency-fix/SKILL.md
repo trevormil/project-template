@@ -1,6 +1,6 @@
 ---
 name: emergency-fix
-description: "Production-emergency hotfix. Smallest possible patch → commit → push DIRECTLY to main (no PR) → file follow-up ticket. Requires the FORCE-MODE env var TERMINAL_FORCE_MAIN=1 — the global block-main-merge hook enforces it. Use when a production-impacting bug is breaking real users RIGHT NOW and the cost of waiting for review exceeds the risk of a fast patch. Use when the user invokes /emergency-fix or says 'this is breaking prod' / 'hotfix' / 'we need to revert now'."
+description: "FORCE-MODE hotfix: smallest patch → commit → push DIRECTLY to main → follow-up ticket. Needs TERMINAL_FORCE_MAIN=1 (hook-enforced). Use on /emergency-fix or 'this is breaking prod' / 'hotfix' / 'we need to revert now'."
 ---
 
 # /emergency-fix — production hotfix bypass

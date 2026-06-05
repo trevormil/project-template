@@ -1,6 +1,6 @@
 ---
 name: session-end
-description: "Close a work session: reconcile what happened into the live session doc, clean up (dead code, scratch, stale branches), run a code-quality/refactor pass, suggest new tickets for follow-ups, capture documentation (ADRs/learnings/runbooks/architecture), and mark the session closed. Use when the user runs /session-end or says they're wrapping up."
+description: "Close a work session: reconcile the live session doc, clean up dead code/branches, run a refactor pass, file follow-up tickets, capture docs, mark closed. Use on /session-end or 'wrapping up'."
 ---
 
 # /session-end — Close a session, leave the repo + docs clean

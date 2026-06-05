@@ -1,6 +1,6 @@
 ---
 name: document
-description: "Sweep recent changes and propose documentation updates (ADRs, runbooks, learnings, architecture, per-folder CLAUDE.md). Use when the user runs /document, asks to capture decisions, or at natural pauses (post-commit, post-PR, end of significant work). Drafts one candidate at a time and writes confirmed ones with valid frontmatter."
+description: "Sweep recent changes and propose doc updates (ADRs, runbooks, learnings, architecture, per-folder CLAUDE.md), one candidate at a time. Use on /document, 'capture decisions', or natural post-commit/post-PR pauses."
 ---
 
 # /document — Capture decisions and knowledge from this session

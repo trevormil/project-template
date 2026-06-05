@@ -1,6 +1,6 @@
 ---
 name: enqueue-request
-description: "Enqueue a one-off TerMinal automation inbox request. Use when an agent, script, integration, or user wants to queue a durable local request that can create Activity, tickets, HITL, agent runs, or background tasks."
+description: "Enqueue a one-off TerMinal automation-inbox request (can create Activity, tickets, HITL, agent runs, or background tasks). Use on /enqueue-request or to queue a durable local automation request."
 ---
 
 # Enqueue Request

@@ -1,6 +1,6 @@
 ---
 name: test-suite
-description: "Delegate an ad-hoc test run to Codex via codex exec and report results in chat (no artifact written). The cheap inner-loop step between commits; /code-review is the checkpoint. Use when the user runs /test-suite or asks for an ad-hoc test run."
+description: "Delegate an ad-hoc test run to Codex and report results in chat (no artifact) — the cheap inner-loop step; /code-review is the checkpoint. Use on /test-suite or 'run the tests'."
 ---
 
 # /test-suite — Run tests, report in chat

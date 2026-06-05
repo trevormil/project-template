@@ -1,6 +1,6 @@
 ---
 name: migrate-agents
-description: "Convert every entry in this repo's .agents/agents.json into the script-first shape — one <id>.sh (chmod 755) + <id>.json sidecar per agent — so the runner can pick them up via the new script-first path. Non-destructive: agents.json is left alone; the runner branches to .sh when present. Use when the user runs /migrate-agents or asks to convert their prompt-style agents into bash scripts."
+description: "Convert .agents/agents.json entries into the script-first shape — one <id>.sh + <id>.json per agent. Non-destructive (agents.json untouched). Use on /migrate-agents or to convert prompt-style agents into bash scripts."
 ---
 
 # /migrate-agents — bulk-convert agents.json → scripts

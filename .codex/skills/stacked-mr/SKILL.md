@@ -1,6 +1,6 @@
 ---
 name: stacked-mr
-description: "Autonomous AFK mode. Works a backlog queue as a STACK of PRs (each branch off the prior tip), TDD per ticket, NO per-PR review during build. Keep building runnable tickets until the in-scope queue is exhausted or every remaining lane is truly blocked; then run one batch review pass that fires /code-review per PR concurrently in isolated worktrees and iterate fixes to the bar. Human merges the reviewed stack. Use when the user runs /stacked-mr or asks to stack PRs."
+description: "Autonomous AFK mode: build a STACK of PRs (each off the prior tip, TDD per ticket, no per-PR review), then one batch review pass fanning out /code-review per PR to the bar. Human merges. Use on /stacked-mr or 'stack PRs'."
 ---
 
 # /stacked-mr — Autonomous overnight PR stacking

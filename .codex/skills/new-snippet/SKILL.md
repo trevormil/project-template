@@ -1,6 +1,6 @@
 ---
 name: new-snippet
-description: "Create or update a TerMinal quick snippet. Use when the user runs /new-snippet, asks for a reusable quick prompt, or wants a one-click terminal launcher item. Writes .TerMinal/snippets.json for repo snippets or ~/.config/TerMinal/snippets.json for global snippets."
+description: "Create or update a TerMinal quick snippet (repo .TerMinal/snippets.json or global). Use on /new-snippet or wanting a reusable quick prompt / one-click launcher item."
 ---
 
 # /new-snippet — Create a TerMinal Quick Snippet

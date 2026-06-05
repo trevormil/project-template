@@ -1,6 +1,6 @@
 ---
 name: new-agent
-description: "Create or update a TerMinal agent from a natural-language request. Use when the user runs /new-agent, says to create an agent, or wants a reusable button/scheduled agent. Writes a script-first .agents/<id>.sh plus .agents/<id>.json sidecar."
+description: "Create or update a TerMinal agent from a natural-language request — writes a script-first .agents/<id>.sh + <id>.json sidecar. Use on /new-agent, 'create an agent', or wanting a reusable button/scheduled agent."
 ---
 
 # /new-agent — Create a TerMinal agent

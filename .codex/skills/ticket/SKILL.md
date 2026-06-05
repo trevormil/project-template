@@ -1,6 +1,6 @@
 ---
 name: ticket
-description: "Create and manage in-repo backlog tickets (markdown files with YAML frontmatter under backlog/). Allocates an id atomically, writes backlog/NNNN-slug.md, lists/updates/closes tickets. Self-bootstrapping, portable. Use when the user says /ticket, asks to file/list/close, or describes work that should be tracked."
+description: "Create and manage in-repo backlog tickets (backlog/NNNN-slug.md with YAML frontmatter); atomic ids, list/update/close. Portable. Use on /ticket, 'file/list/close a ticket', or describing work to track."
 ---
 
 # /ticket — In-repo backlog tickets

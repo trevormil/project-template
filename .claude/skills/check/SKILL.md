@@ -1,6 +1,6 @@
 ---
 name: check
-description: "Run a scheduled cadence agent defined by an .agents/<kind>.md spec — runs in its own worktree, persists last-scanned SHA so re-runs can no-op early, and (depending on the spec's mode) either reports findings to reports/<kind>/<sha>.md OR proposes changes via a ticket + MR. Use when the user runs /check <kind>, asks for a scheduled-agent run, or wires up a launchd schedule."
+description: "Run a scheduled cadence agent from an .agents/<kind>.md spec — isolated worktree, SHA-gated no-op on re-runs, then reports findings or proposes a ticket+MR. Use on /check <kind>, a scheduled-agent run, or wiring a launchd schedule."
 ---
 
 # /check — Scheduled cadence agents

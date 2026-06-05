@@ -1,6 +1,6 @@
 ---
 name: unblock-ci
-description: "FORCE-MODE skill — main CI is red and blocking the team. Diagnose the failure, then choose the narrowest of: revert the bad SHA, pin a working dep, or skip a documented-flaky test. Commit and push DIRECTLY to main (no PR). Requires TERMINAL_FORCE_MAIN=1 — the global block-main-merge hook enforces it. Use when the default-branch pipeline is red, OTHER PRs are stuck behind it, and waiting for a normal review is more expensive than a narrow fix. Use when the user invokes /unblock-ci or says 'main CI is broken' / 'green main' / 'pipeline is hosed'."
+description: "FORCE-MODE: main CI is red — apply the narrowest of revert bad SHA / pin dep / skip documented-flaky test, pushed directly to main. Needs TERMINAL_FORCE_MAIN=1. Use on /unblock-ci or 'main CI is broken' / 'green main'."
 ---
 
 # /unblock-ci — get main green so the team can ship

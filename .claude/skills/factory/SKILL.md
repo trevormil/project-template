@@ -1,6 +1,6 @@
 ---
 name: factory
-description: "Continuous autonomous orchestrator — the no-handoff loop around /stacked-mr. /stacked-mr builds and reviews runnable work to the bar; /factory keeps doing it: reconcile with /merge-sync, run a stacked-mr pass, optionally refill the queue with discovery agents, compact/migrate context, repeat — parking HITL on decisions/blockers while continuing every independent lane. NEVER stops with 'tell me when you are ready' language, and NEVER merges to main/master (the human gate is the point). It reuses every skill; it does not reimplement build or review. Use when the user runs /factory or asks to run the factory / continuously / autonomously work the backlog until it's empty."
+description: "Continuous autonomous orchestrator — the no-handoff loop around /stacked-mr: reconcile (/merge-sync), build+batch-review a stack to the bar, optionally refill via discovery, repeat. Parks HITL, never merges to main. Use on /factory or 'work the backlog autonomously / continuously'."
 ---
 
 # /factory — continuous autonomous orchestrator

@@ -1,6 +1,6 @@
 ---
 name: security-scan
-description: "Run deterministic local security checks on a repo or diff: dependency CVE audit (bun audit / npm audit) by default, optional SAST (semgrep if installed). Secret scanning (gitleaks) is OPT-IN via --with-gitleaks because it can be slow on forks with deep history. Outputs a structured summary the /code-review skill can ingest for the Security axis. Use when the user runs /security-scan, asks for a security check, or as a pre-push gate before opening an MR/PR."
+description: "Deterministic local security checks — dependency CVE audit (bun/npm) by default, optional SAST (semgrep) and opt-in gitleaks — summarized for code-review's Security axis. Use on /security-scan or as a pre-push gate."
 ---
 
 # /security-scan — Deterministic security checks
