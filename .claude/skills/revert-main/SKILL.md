@@ -1,6 +1,6 @@
 ---
 name: revert-main
-description: "FORCE-MODE skill — the narrowest force-op. `git revert HEAD` on main, run the suite, push directly. Requires TERMINAL_FORCE_MAIN=1 — the global block-main-merge hook enforces it. Use when the LAST commit on main was a clear mistake and the team needs it reversed RIGHT NOW. Use when the user invokes /revert-main or says 'revert main' / 'undo the last commit' / 'roll back HEAD'."
+description: "FORCE-MODE: git revert HEAD on main, run the suite, push directly. Needs TERMINAL_FORCE_MAIN=1 (hook-enforced). Use on /revert-main or 'revert main' / 'undo the last commit' / 'roll back HEAD'."
 ---
 
 # /revert-main — undo the most recent main commit

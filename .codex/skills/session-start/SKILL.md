@@ -1,6 +1,6 @@
 ---
 name: session-start
-description: "Open a work session: allocate a session id, seed a live session doc at sessions/NNNN-slug/session.md by scanning the repo for everything relevant (in-scope tickets, research, tools, prior sessions, git/PR state), and generate a TDD-first checklist. The session doc is the central live state for the session. Use when the user runs /session-start \"<goal>\" or asks to kick off a work session."
+description: "Open a work session: allocate an id, seed a live session doc by scanning the repo for relevant tickets/state, and generate a TDD-first checklist. Use on /session-start \"<goal>\" or to kick off work."
 ---
 
 # /session-start — Open a session and seed its live doc

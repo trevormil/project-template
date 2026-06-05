@@ -1,6 +1,6 @@
 ---
 name: merge-sync
-description: "Reconcile ticket + backlog state with reality: close tickets whose PR(s) merged and scrub the merged URL from prs:, plus a periodic drift sweep (in-progress with no open PR, closed-but-still-linked, long-stale open). Read-only on git (never merges); only edits backlog files. The standalone periodic ticket cleanup; also runs inside /session-end. Use after merging a stack or anytime PRs have landed."
+description: "Reconcile tickets+backlog with reality: close tickets whose PRs merged, scrub merged URLs, sweep status drift. Edits backlog only, never merges. Use after merging a stack or whenever PRs have landed."
 ---
 
 # /merge-sync — Reconcile tickets with merged PRs

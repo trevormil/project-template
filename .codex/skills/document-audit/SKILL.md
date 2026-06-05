@@ -1,6 +1,6 @@
 ---
 name: document-audit
-description: "Audit docs/ and ~/.claude/docs/ for rot — broken file refs, stale runbooks, ADR contradictions, architecture drift, orphan per-folder CLAUDE.md. Use when the user runs /document-audit or asks to check doc health. Reports findings; does not auto-delete or auto-edit."
+description: "Audit docs/ and ~/.claude/docs/ for rot — broken refs, stale runbooks, ADR contradictions, architecture drift, orphan CLAUDE.md. Reports only; never auto-edits. Use on /document-audit or 'check doc health'."
 ---
 
 # /document-audit — Catch documentation drift

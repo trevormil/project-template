@@ -82,73 +82,22 @@ The **`horizon`** tag (`now` | `next` | `future`) is orthogonal to
 priority — `/code-review` and `/session-end` park out-of-scope ideas as
 `future`.
 
-### [4.2] Inbox — agents reaching the human
+### [4.2] Inboxes — reaching the human & queuing automation
 
-**One GLOBAL inbox**, not per-repo. Any skill/agent in any repo:
+Two inboxes; full contracts in
+[`docs/workflow/inbox.md`](./docs/workflow/inbox.md).
 
-```bash
-.claude/bin/hitl "<title>" "<action needed>" "<optional detail>"
-```
-
-Use the helper only; do not write `~/.config/TerMinal/hitl.json` directly.
-It files to the TerMinal **Inbox** drawer (with an unresolved count), mirrors to
-the activity feed, and **pings Telegram** directly when bot/chat are configured.
-If Telegram is not set up or delivery fails, filing still succeeds; Telegram is
-never a hard dependency. Failed cron runs auto-file one.
-
-The agent-side HITL API is append-only. Agents and skills may file Inbox items
-and query their status, but resolution is a human/operator action from TerMinal
-Inbox or Telegram Resolve. To wait on a human decision, query the item/list
-status or periodically re-check the original blocker; when it no longer blocks,
-update any related `stuck` ticket back to `open` (or `in-progress` if resuming
-it now), then continue the workflow. Do not leave stale blocked state behind.
-Do not self-resolve your own HITL item.
-
-Claude/Codex Stop hooks, and Cursor completion flows launched through TerMinal,
-can file deterministic completion Inbox items by default. Disable only those
-completion items from TerMinal Settings → Inbox, or with:
-
-```json
-{
-  "inbox": {
-    "completionHook": false
-  }
-}
-```
-
-in `~/.config/TerMinal/settings.json`. Manual/blocker Inbox filing still works.
-
-### [4.3] Automation Inbox — local automation requests
-
-For local integrations or scripts that need to request automation later, queue a
-JSON event instead of running arbitrary shell inline. This is the always-on
-intake path: use agents for manual runs, schedules for time-based runs, and the
-Automation Inbox for external events.
-
-```bash
-terminal-cli inbox enqueue \
-  --source-id local-script:repo-health \
-  --source-name "Local repo health" \
-  --source local-script \
-  --type automation.requested \
-  --repo-root "$PWD" \
-  --action run-agent \
-  --agent health \
-  --engine codex
-```
-
-TerMinal watches `~/.config/TerMinal/automation-inbox/new/` by default,
-validates and dedupes files, then moves them through `processing/`, `done`,
-`failed`, or `dead-letter`. The Runs tab's Automation Inbox view shows grouped
-request sources, queue counts, and recent request-to-run outcomes. Use
-`terminal-cli inbox example`, `terminal-cli inbox status`, and the
-`enqueue-request` skill for one-off requests. Use `new-inbox-source` to build a
-durable adapter/poller/webhook bridge. Do not put arbitrary shell in inbox
-events; trigger an existing agent/script or file HITL for human approval.
-
-Reserve for **true human-needs** — spec forks, approvals, credentials,
-OAuth/browser flows, hard blockers. **Not** for review `request-changes`
-or test failures inside a workflow — those iterate.
+- **HITL inbox** (one GLOBAL, not per-repo) — file with
+  `.claude/bin/hitl "<title>" "<action needed>" "<detail>"` (helper only).
+  Append-only: agents file + query; **humans resolve** (never self-resolve).
+  When a blocker clears, move the related `stuck` ticket back to `open`/
+  `in-progress`. Reserve for **true human-needs** (spec forks, approvals,
+  creds, OAuth) — **not** review `request-changes` or test failures, which
+  iterate.
+- **Automation inbox** — queue a JSON event via `terminal-cli inbox enqueue`
+  instead of running arbitrary shell inline; TerMinal validates, dedupes, and
+  runs it. Use the `enqueue-request` skill for one-offs, `new-inbox-source`
+  for a durable adapter.
 
 ## [5] Branches, PRs/MRs & the forge
 
@@ -222,17 +171,11 @@ Short tickets don't need it.
 
 ## [10] Autonomous / AFK modes
 
-- **`/notify`** — on-demand two-way Telegram bridge for AFK sessions
-  (depends on `~/.claude` telegram creds).
-- **`/stacked-mr`** — overnight: stacks PRs (each off the prior tip),
-  TDD per ticket, no per-PR review during build, then one batch review
-  pass at the end (one review per PR, each in its own worktree). No
-  human merge until you review the stack in the morning.
-- **`/factory`** — perpetual loop around `/stacked-mr`: each iteration
-  `/merge-sync` → build stack → batch-review → handle verdicts →
-  optionally refill via `--discover` → repeat. Parks HITL on
-  decisions/blockers. Pure orchestration; never changes the bar or
-  merges to main. Bounded by backlog.
+`/notify` (Telegram bridge), `/stacked-mr` (build a PR stack, then one batch
+review to the bar), `/factory` (perpetual loop around `/stacked-mr`:
+reconcile → build → review → optionally refill → repeat). All park HITL on
+blockers and **never merge to main**. Mechanics live in each skill body
+(loaded on invocation); context-hygiene rules in factory §2.5/§2.6.
 
 ## [11] Conventions
 
@@ -249,14 +192,7 @@ Short tickets don't need it.
 
 ## [13] Activity feed
 
-Surface every workflow milestone to the shared feed so it shows up live
-in TerMinal:
-
-```bash
-.claude/bin/activity <kind> "<title>" ["<detail>"]
-```
-
-`kind` ∈ `ticket-filed` · `pr-verdict` · `session-start` · `session-end` ·
-`agent-run` · `info` · `error`. Exit-0 safe (never breaks workflow);
-derives repo context from git. **Every skill** that hits a milestone emits
-one event.
+Every skill emits a feed event at each workflow milestone (so runs show live
+in TerMinal): `.claude/bin/activity <kind> "<title>" ["<detail>"]`. Exit-0
+safe; derives repo context from git. `kind` ∈ `ticket-filed` · `pr-verdict` ·
+`session-start` · `session-end` · `agent-run` · `info` · `error`.

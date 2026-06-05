@@ -1,6 +1,6 @@
 ---
 name: terminal-widget
-description: "Add or edit repo-specific sidebar widgets for the TerMinal cockpit by writing .TerMinal/widgets.json. Each widget is a shell command the terminal polls and renders in the sidebar. Use when the user wants to surface repo-specific state (counts, status, metrics) in the terminal sidebar, or runs /terminal-widget."
+description: "Add or edit repo-specific TerMinal sidebar widgets (shell commands the terminal polls) via .TerMinal/widgets.json. Use on /terminal-widget or to surface repo state (counts, status, metrics) in the sidebar."
 ---
 
 # /terminal-widget — Repo-specific cockpit sidebar widgets

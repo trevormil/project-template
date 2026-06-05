@@ -1,6 +1,6 @@
 ---
 name: new-schedule
-description: "Create a TerMinal schedule from a natural-language request. Use when the user runs /new-schedule, wants an agent to run on a cadence, or asks to schedule an existing agent. Appends a launchd-backed entry to ~/.config/TerMinal/schedules.json."
+description: "Create a TerMinal cron schedule from a natural-language request — appends a launchd-backed entry to ~/.config/TerMinal/schedules.json. Use on /new-schedule or 'run this agent on a cadence'."
 ---
 
 # /new-schedule — Schedule a TerMinal agent

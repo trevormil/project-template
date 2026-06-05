@@ -1,6 +1,6 @@
 ---
 name: new-inbox-source
-description: "Design or implement a durable TerMinal automation inbox source. Use when creating a local adapter, poller, webhook bridge, file watcher, or service that repeatedly enqueues requests into the automation inbox."
+description: "Design or implement a durable TerMinal automation-inbox source (adapter, poller, webhook bridge, file watcher). Use on /new-inbox-source or when building a service that repeatedly enqueues requests."
 ---
 
 # New Inbox Source

@@ -1,6 +1,6 @@
 ---
 name: notify
-description: "On-demand AFK Telegram bridge for this repo: send completion/blocker pings to the user and receive their replies via a background listener that wakes the session when a message arrives. OFF by default — armed only when the user says they're AFK / asks to be pinged. Invokable as /notify <message>. Use when the user goes AFK, asks to steer from Telegram, or runs /notify."
+description: "On-demand AFK Telegram bridge: send completion/blocker pings and receive replies via a background listener that wakes the session. OFF by default. Use on /notify, going AFK, or steering from Telegram."
 ---
 
 # /notify — On-demand AFK Telegram bridge

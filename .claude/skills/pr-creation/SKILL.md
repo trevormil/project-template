@@ -1,6 +1,6 @@
 ---
 name: pr-creation
-description: "Take an in-repo backlog ticket from idea to open GitHub PR: feature branch (optionally a worktree) → implement (TDD) → push → open PR via gh → link the PR back into the ticket's prs:. Does NOT auto-run /test-suite or /code-review — the user triggers those manually when ready. Use when the user runs /pr-creation or asks to start work on a ticket."
+description: "Take a backlog ticket from idea to open PR: feature branch → TDD → push → open PR (gh) → link the PR back into the ticket. Does NOT auto-run tests/review. Use on /pr-creation or 'start work on a ticket'."
 ---
 
 # /pr-creation — Take a ticket from idea to open PR

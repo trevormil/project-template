@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: "Delegate a GitHub/GitLab PR review to Codex via codex exec. A deterministic preflight does the recon (PR meta, diff, tests, language histogram, surface flags, prior review state), then Codex scores six axes and writes ONE combined artifact at .reviews/<pr>/<sha>.md. Use when the user runs /code-review or asks to review a PR."
+description: "Delegate a GitHub/GitLab PR review to Codex: a deterministic preflight does recon, then Codex scores six axes into one artifact at .reviews/<pr>/<sha>.md. Use on /code-review or 'review this PR'."
 ---
 
 # /code-review — PR review with six-axis scoring + embedded tests
