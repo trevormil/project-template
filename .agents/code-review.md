@@ -80,8 +80,9 @@ review, then one pass reviews every PR in the stack. The batch is **N independen
 single-PR reviews run concurrently**, not a new combined format:
 
 - **One artifact set per PR, unchanged.** Each PR still gets its own
-  `.reviews/<pr>/<sha>.md` + `findings.json` + `suggestions.json`, keyed by that
-  PR's number and head SHA. There is no combined batch artifact.
+  `.TerMinal/reviews/<pr>/<sha>.md` + `findings.json` + `suggestions.json`
+  (legacy v1: `.reviews/<pr>/<sha>.md`), keyed by that PR's number and head SHA.
+  There is no combined batch artifact.
 - **Attribution = the PR's own incremental slice.** Each review resolves its base
   from the PR's forge target branch (the parent PR's branch in a stack), so it
   sees only that PR's delta and attributes findings to the owning PR. This is the
@@ -388,7 +389,8 @@ to this repo's `/ticket` system:
 ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/.claude/skills/ticket/bin/tickets" open      # check for duplicates first
 id=$("$ROOT/.claude/skills/ticket/bin/next-ticket-id")
-# write backlog/<id>-<slug>.md per .claude/skills/ticket/EXAMPLE.md:
+# write .TerMinal/backlog/<id>-<slug>.md per .claude/skills/ticket/EXAMPLE.md
+# (legacy v1 repos may use backlog/<id>-<slug>.md):
 #   status: open, source: code-review, an appropriate type + priority,
 #   and at least one concrete, testable acceptance criterion.
 ```

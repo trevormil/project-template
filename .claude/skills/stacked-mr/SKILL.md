@@ -94,7 +94,7 @@ Compact at:
 1. Every ~3–5 tickets inside Phase 1.
 2. The Phase 1 → Phase 2 boundary (build done; diffs no longer needed).
 3. After collecting batch verdicts, before handling them (verdicts in
-   `.reviews/<pr>/`; keep just per-PR summary + counts).
+   `.TerMinal/reviews/<pr>/`, or `.reviews/<pr>/` in legacy v1; keep just per-PR summary + counts).
 4. After each fix + re-review.
 
 Prefer out-of-process delegation: each `/code-review` runs in its own

@@ -44,13 +44,13 @@ runs the test suite (with result caching), reads prior `findings.json` +
 If the preflight exits with code 2, the packet's `short_circuit` field tells
 you what to do:
 
-- **`already_reviewed`** — `.reviews/<pr>/<sha>.md` already exists for this
-  exact SHA. Surface the existing artifact path; we're done.
+- **`already_reviewed`** — `.TerMinal/reviews/<pr>/<sha>.md` already exists for this
+  exact SHA (or `.reviews/<pr>/<sha>.md` in legacy v1). Surface the existing artifact path; we're done.
 - **`diff_hash_match`** — a prior SHA has bit-identical diff (rebase / amend
   / force-push without content change). Copy that artifact forward with a
   new SHA filename and `equivalent_to: <old_sha>` in the frontmatter; we're done.
 - **`tests_red`** — fill the `blocked.md.tmpl` with test totals + tail and
-  write it to `.reviews/<pr>/<sha>.md`. No codex invocation; verdict is
+  write it to `.TerMinal/reviews/<pr>/<sha>.md` (or `.reviews/<pr>/<sha>.md` in legacy v1). No codex invocation; verdict is
   deterministically `blocked`. We're done.
 
 Sample (for `tests_red`):
