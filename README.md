@@ -79,7 +79,8 @@ bootstrap.sh                  inject the workflow into an existing repo
     test-suite/               ad-hoc chat-only test run (the cheap inner loop)
     check/                    cadence repo inspections → .TerMinal/checks (dead-code, …)
     security-scan/            deterministic security floor (CVE/secrets/SAST)
-    document/ document-audit/ knowledge base capture + rot check
+    document/ document-audit/ sidecar docs capture + rot check
+    knowledge/                capture visual Knowledge Base links/media/snippets
     notify/                   on-demand AFK Telegram bridge
     stacked-mr/               autonomous overnight PR/MR stacking (batch-reviewed at the end)
     factory/                  continuous orchestrator: loops /stacked-mr (reconcile → pass → refill), HITL-gated

@@ -29,4 +29,4 @@ new ticket closes or a new ADR lands, even if no source code changed.
 ## Human-authored docs
 
 Personal notes, scratch thinking, decision drafts that aren't yet ADRs —
-those belong in `docs/notes/` or your `~/.config/TerMinal/` Notes tab, not here.
+those belong in `docs/notes/` or your TerMinal Knowledge Base, not here.
