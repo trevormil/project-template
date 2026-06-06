@@ -162,7 +162,7 @@ case "$engine" in
     exit_code=$?
     ;;
   *)
-    claude -p "$(<"$prompt_file")" --dangerously-skip-permissions --model "$model"
+    claude -p "$(<"$prompt_file")" --permission-mode auto --model "$model"
     exit_code=$?
     ;;
 esac

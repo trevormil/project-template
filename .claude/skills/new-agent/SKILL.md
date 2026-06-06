@@ -63,7 +63,7 @@ case "$engine" in
   *) model="${TERMINAL_MODEL:-haiku}" ;;
 esac
 
-claude -p "$prompt" --dangerously-skip-permissions ${model:+--model "$model"}
+claude -p "$prompt" --permission-mode auto ${model:+--model "$model"}
 codex exec -s danger-full-access -C "$worktree" ${model:+--model "$model"} "$prompt"
 cursor-agent -p --force --trust --workspace "$worktree" ${model:+--model "$model"} "$prompt"
 ```

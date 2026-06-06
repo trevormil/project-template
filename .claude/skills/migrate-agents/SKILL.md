@@ -52,7 +52,7 @@ for id in $ids; do
 
   # Build the exec line with TERMINAL_MODEL override
   if [ "$engine" = "claude" ]; then
-    cmd="claude -p $(printf %q "$prompt") --dangerously-skip-permissions \${TERMINAL_MODEL:+--model \"\$TERMINAL_MODEL\"}"
+    cmd="claude -p $(printf %q "$prompt") --permission-mode auto \${TERMINAL_MODEL:+--model \"\$TERMINAL_MODEL\"}"
   else
     cmd="codex exec -s danger-full-access -C \"\$TERMINAL_WORKTREE\" \${TERMINAL_MODEL:+--model \"\$TERMINAL_MODEL\"} $(printf %q "$prompt")"
   fi

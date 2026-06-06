@@ -61,7 +61,7 @@ A minimal "old-style" agent translates 1:1:
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-exec claude -p 'Act as the documentation agent ...' --dangerously-skip-permissions
+exec claude -p 'Act as the documentation agent ...' --permission-mode auto
 ```
 
 A pipeline-style script with a conditional escalation:
@@ -80,7 +80,7 @@ fi
 
 # Failed precheck — escalate
 claude -p "The health check failed. Diagnose and either apply a safe fix and open a PR, or file a HITL with the failure context." \
-  --dangerously-skip-permissions \
+  --permission-mode auto \
   --model "${TERMINAL_MODEL:-haiku}"
 ```
 
@@ -267,9 +267,8 @@ underlying file just changed shape.
   convention for scheduled cadence inspections; the scripts that implement
   each kind move to `.agents/<kind>.sh` under this proposal but the
   contract (sole-writer, reports/, etc.) stays.
-- **Not** a sandbox — `--dangerously-skip-permissions` is still in play
-  for claude calls inside scripts; codex still uses `-s danger-full-access`.
-  Trust boundary is unchanged.
+- **Not** a sandbox — Claude calls run in auto permission mode; Codex still
+  uses `-s danger-full-access`. Trust boundary is unchanged.
 
 ## Phase plan
 

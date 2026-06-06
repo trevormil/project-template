@@ -85,6 +85,6 @@ case "$engine" in
     cursor-agent -p --force --trust --workspace "${TERMINAL_WORKTREE:-$TERMINAL_REPO}" --model "$model" "$prompt"
     ;;
   *)
-    claude -p "$prompt" --dangerously-skip-permissions --model "$model"
+    claude -p "$prompt" --permission-mode auto --model "$model"
     ;;
 esac
