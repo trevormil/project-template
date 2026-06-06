@@ -8,7 +8,7 @@
 #   TERMINAL_BRANCH     worktree branch (or "main" if inPlace)
 #   TERMINAL_WORKTREE   worktree path
 #   TERMINAL_ENGINE     hint: claude | codex | cursor
-#   TERMINAL_MODEL      hint: haiku/sonnet/opus/etc. (optional)
+#   TERMINAL_MODEL      hint (default: cheap/fast for failure triage)
 #
 # Helpers on PATH (from ~/.config/TerMinal/bin):
 #   terminal-cli ticket "<title>" "<body>"
@@ -52,25 +52,30 @@ fi
 
 engine=${TERMINAL_ENGINE:-claude}
 case "$engine" in
-  codex) model=${TERMINAL_MODEL:-gpt-5} ;;
+  codex) model=${TERMINAL_MODEL:-gpt-5-mini} ;;
   cursor) model=${TERMINAL_MODEL:-composer-2.5-fast} ;;
   *) model=${TERMINAL_MODEL:-haiku} ;;
 esac
+
+precheck_excerpt=$(tail -200 "$precheck_log")
 
 prompt="The repo health precheck failed for $TERMINAL_REPO (branch: $TERMINAL_BRANCH).
 
 Probe results:
 $summary
 
-Precheck output:
-$(cat "$precheck_log")
+Precheck output (last 200 lines):
+$precheck_excerpt
 
 Diagnose the failures. If you can apply a surgical, scope-respecting fix that
 keeps the test suite green, do it: commit on this worktree's branch and open a
 PR per the project's pr-creation conventions. If the fix is non-trivial or
 risks scope creep, file a backlog ticket via \`terminal-cli ticket\` instead.
 If you're blocked entirely (missing credentials, ambiguous requirements), file
-a HITL via \`terminal-cli hitl\`."
+a HITL via \`terminal-cli hitl\`.
+
+Token discipline: inspect the failing files and config only; avoid broad repo
+reads unless the error points there."
 
 case "$engine" in
   codex)

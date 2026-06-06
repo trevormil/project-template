@@ -55,9 +55,32 @@ Available kinds = the `.agents/*.md` specs that describe cadence agents (i.e.
 everything except the per-PR contracts `code-review.md`, `testing.md`, and the
 forge adapter `forge.md`).
 
-## Delegate to Codex
+## Prefer script-first execution
 
-Consistent with `/code-review`, delegate the run to Codex from the repo root:
+If `.agents/<kind>.sh` exists and is executable, run it directly first. The
+script owns deterministic prechecks, early exits, capped prompts, and any
+engine escalation. This is the cheapest path and should be the default for
+scheduled agents.
+
+```bash
+kind="<kind>"
+TERMINAL_REPO="$PWD" \
+TERMINAL_AGENT_ID="$kind" \
+TERMINAL_WORKTREE="$PWD" \
+TERMINAL_BRANCH="$(git branch --show-current 2>/dev/null || echo main)" \
+TERMINAL_ENGINE="${TERMINAL_ENGINE:-claude}" \
+TERMINAL_MODEL="${TERMINAL_MODEL:-haiku}" \
+PATH="$HOME/.config/TerMinal/bin:$PATH" \
+  ".agents/$kind.sh"
+```
+
+Do not also paste `.agents/<kind>.md` into an LLM prompt when the script
+succeeds or intentionally no-ops.
+
+## Fallback: delegate to Codex
+
+If no executable script exists for the kind, delegate the run to Codex from the
+repo root:
 
 ```bash
 codex exec -s danger-full-access -C "$PWD" "Run the <kind> cadence agent following .agents/<kind>.md in this repo exactly. Honor the spec's mode (report or writer), early-exit fast path, sole-writer scope, ticket+MR workflow, and worktree isolation. Write the artifact to .TerMinal/reports/<kind>/<short-sha>.md in v2 repos (legacy v1: reports/<kind>/<short-sha>.md) per the contract. Never push directly to main."

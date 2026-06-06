@@ -50,22 +50,26 @@ Create the directory: `mkdir -p "$SESSIONS_DIR/${id}-${slug}"`.
 ### 2. Seed context (the high-value step)
 
 This is what makes a session start well. Scan the repo **read-only** and gather
-everything relevant to the goal. Run these in parallel where possible:
+only goal-relevant context. Run these in parallel where possible and keep the
+model context capped:
 
 - **In-scope tickets** — `"$ROOT/.claude/skills/ticket/bin/tickets" open` and
   `... in-progress`. Pull the ones matching the goal (by id if the user named
-  them, else by keyword). For each, capture the one-line title + acceptance
-  criteria. These drive the checklist.
-- **Research & docs** — grep `research/`, `docs/` (and any project notes dir)
-  for the goal's keywords. List relevant ADRs (`docs/decisions/`), runbooks
-  (`docs/runbooks/`), learnings (`docs/learnings/`), and `docs/architecture.md`
-  sections.
+  them, else by keyword). Read at most 8 ticket bodies; for each, capture the
+  one-line title + acceptance criteria. These drive the checklist.
+- **Research & docs** — use path/snippet search first, not full-file reads:
+  `rg -n -i -C2 "<goal keywords>" docs research 2>/dev/null | head -160`.
+  List relevant ADRs (`docs/decisions/`), runbooks (`docs/runbooks/`),
+  learnings (`docs/learnings/`), and `docs/architecture.md` sections. Read
+  only the files that match.
 - **Existing tools / skills** — note which `.claude/skills/` and repo `bin/`
-  tools apply to this goal so we reuse instead of rebuild.
+  tools apply to this goal so we reuse instead of rebuild. List names first
+  (`find .claude/skills -maxdepth 2 -name SKILL.md | head -40`) and open only
+  directly relevant skill docs.
 - **Prior sessions** — `"$ROOT/.claude/skills/session-start/bin/sessions"`.
-  Read the most recent / related session docs, especially their **Follow-ups**
-  sections — unfinished work and suggested tickets carry forward. Link them in
-  `prior_sessions`.
+  Read at most 3 recent or keyword-related session docs, especially their
+  **Follow-ups** sections — unfinished work and suggested tickets carry
+  forward. Link them in `prior_sessions`.
 - **Git / PR state** — current branch, `git log --oneline -10`, and open PRs
   (`gh pr list`). Note anything in flight that this session interacts with. If
   any merged PRs are still linked to non-closed tickets, suggest running

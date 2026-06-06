@@ -38,7 +38,7 @@ Treat a missing file as `[]`. Preserve existing entries and write JSON with
   "agentId": "<existing agent id>",
   "agentTitle": "<agent title>",
   "engine": "claude",
-  "model": "",
+  "model": "haiku",
   "prompt": "<agent prompt when available, else empty string>",
   "spec": { "kind": "calendar", "hour": 9, "minute": 0 },
   "enabled": true,
@@ -49,7 +49,10 @@ Treat a missing file as `[]`. Preserve existing entries and write JSON with
 
 For script-first agents, `prompt` may be `""`; TerMinal runs the `.sh` body.
 `engine` may be `"claude"`, `"codex"`, or `"cursor"`; preserve the agent
-sidecar preference unless the user requested a different engine.
+sidecar preference unless the user requested a different engine. For recurring
+report/precheck schedules, prefer cheap model defaults (`haiku`,
+`composer-2.5-fast`, or a small Codex model such as `gpt-5-mini`) because the
+script should do deterministic prechecks and escalate only on failure.
 
 ## Spec forms
 

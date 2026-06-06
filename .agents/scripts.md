@@ -44,13 +44,15 @@ not required — the sidecar JSON is authoritative.
   "opensPr": true,
   "inPlace": false,
   "engineHint": "claude",
-  "modelHint": "sonnet"
+  "modelHint": "haiku"
 }
 ```
 
 `engineHint` + `modelHint` are *suggestions* the script body honors via
 `$TERMINAL_ENGINE` / `$TERMINAL_MODEL` env vars; the schedule or one-off
-launch can override them.
+launch can override them. Recurring report/precheck agents should default to
+cheap/fast models (`haiku`, `composer-2.5-fast`, or a small Codex model such as
+`gpt-5-mini`) and reserve stronger defaults for implementation-heavy agents.
 
 ## The script body
 
@@ -79,8 +81,14 @@ fi
 # Failed precheck — escalate
 claude -p "The health check failed. Diagnose and either apply a safe fix and open a PR, or file a HITL with the failure context." \
   --dangerously-skip-permissions \
-  --model "${TERMINAL_MODEL:-sonnet}"
+  --model "${TERMINAL_MODEL:-haiku}"
 ```
+
+Before interpolating command output into an LLM prompt, cap it. Good defaults:
+`tail -200 "$log"`, `head -100` for file lists, and
+`rg -n -C2 "$query" ... | head -160` for snippets. Prefer passing paths and
+letting the engine open one specific file over pasting whole files into the
+prompt.
 
 ## Runner environment
 

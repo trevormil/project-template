@@ -27,8 +27,8 @@ If the user explicitly asks for a global agent, write to
    - existing `.agents/*.sh` and `.agents/*.json` to avoid duplicate ids
 2. Pick a short kebab-case `id`, a clear `title`, a one-line `description`, and
    a lucide icon name.
-3. Write the bash script. Prefer deterministic checks first, then call an LLM
-   only when useful.
+3. Write the bash script. Prefer deterministic checks first, cap any context
+   passed to an LLM, then call an LLM only when useful.
 4. Write the sidecar JSON.
 5. Verify the script is executable and summarize the paths.
 
@@ -43,7 +43,9 @@ set -uo pipefail
 repo="${TERMINAL_REPO:-$(git rev-parse --show-toplevel)}"
 worktree="${TERMINAL_WORKTREE:-$repo}"
 engine="${TERMINAL_ENGINE:-claude}"
-model="${TERMINAL_MODEL:-}"
+# Recurring/report agents should default cheap; implementation agents may leave
+# this empty so the selected engine uses its normal coding default.
+model="${TERMINAL_MODEL:-haiku}"
 
 # Do deterministic work first. For TerMinal helpers:
 # terminal-cli ticket "<title>" "<body>"
@@ -55,13 +57,22 @@ model="${TERMINAL_MODEL:-}"
 When calling an engine from inside the script:
 
 ```bash
-claude -p "<prompt>" --dangerously-skip-permissions ${model:+--model "$model"}
-codex exec -s danger-full-access -C "$worktree" ${model:+--model "$model"} "<prompt>"
-cursor-agent -p --force --trust --workspace "$worktree" ${model:+--model "$model"} "<prompt>"
+case "$engine" in
+  codex) model="${TERMINAL_MODEL:-gpt-5-mini}" ;;
+  cursor) model="${TERMINAL_MODEL:-composer-2.5-fast}" ;;
+  *) model="${TERMINAL_MODEL:-haiku}" ;;
+esac
+
+claude -p "$prompt" --dangerously-skip-permissions ${model:+--model "$model"}
+codex exec -s danger-full-access -C "$worktree" ${model:+--model "$model"} "$prompt"
+cursor-agent -p --force --trust --workspace "$worktree" ${model:+--model "$model"} "$prompt"
 ```
 
 Rules:
 
+- Cap logs and file lists before interpolation (`tail -200`, `head -100`,
+  `rg -n -C2 ... | head -160`). Prefer letting the engine open a specific path
+  over pasting whole files into the prompt.
 - Never merge to `main`/`master`.
 - Open a PR/MR only when the script creates concrete code changes.
 - Use `terminal-cli ticket` for findings the agent should not fix in the same run.
@@ -81,14 +92,18 @@ Rules:
   "icon": "Bot",
   "opensPr": false,
   "engine": "claude",
-  "model": "",
+  "model": "haiku",
   "inPlace": false
 }
 ```
 
 Set `opensPr: true` only if the agent is expected to commit and open a PR/MR.
 `engine` may be `"claude"`, `"codex"`, or `"cursor"`; use the user's selected
-engine unless the agent has a clear reason to prefer one.
+engine unless the agent has a clear reason to prefer one. For recurring
+report/precheck agents, prefer cheap model defaults (`haiku`,
+`composer-2.5-fast`, or a small Codex model such as `gpt-5-mini`). Leave
+`model` empty only for implementation-heavy agents where the engine's coding
+default is intentional.
 Set `inPlace: true` only for agents that intentionally mutate the current repo
 without a worktree; most agents should leave it false.
 

@@ -5,6 +5,6 @@
   "icon": "ScanSearch",
   "opensPr": false,
   "engine": "claude",
-  "model": "sonnet",
+  "model": "haiku",
   "inPlace": false
 }

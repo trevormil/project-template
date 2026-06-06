@@ -20,7 +20,7 @@
 #   TERMINAL_BRANCH    worktree branch (or "main" if inPlace)
 #   TERMINAL_WORKTREE  worktree path
 #   TERMINAL_ENGINE    "claude" | "codex" | "cursor"
-#   TERMINAL_MODEL     model hint (default: sonnet for the analysis pass)
+#   TERMINAL_MODEL     model hint (default: cheap/fast for routine analysis)
 
 set -uo pipefail
 
@@ -71,9 +71,9 @@ fi
 # ---------------------------------------------------------------------------
 engine=${TERMINAL_ENGINE:-claude}
 case "$engine" in
-  codex) model=${TERMINAL_MODEL:-gpt-5} ;;
+  codex) model=${TERMINAL_MODEL:-gpt-5-mini} ;;
   cursor) model=${TERMINAL_MODEL:-composer-2.5-fast} ;;
-  *) model=${TERMINAL_MODEL:-sonnet} ;;
+  *) model=${TERMINAL_MODEL:-haiku} ;;
 esac
 short=$(git -C "$TERMINAL_REPO" rev-parse --short "$head")
 if [ -d "$TERMINAL_REPO/reports" ] && [ ! -f "$TERMINAL_REPO/.TerMinal/template.json" ]; then
@@ -84,11 +84,19 @@ fi
 mkdir -p "$reports_dir/drift"
 report="$reports_dir/drift/${short}.md"
 
-# Limit the diff size we hand to the engine — 3000 lines is enough to spot drift
-# patterns without blowing the context window on huge refactors.
-diff_excerpt=$(git -C "$TERMINAL_REPO" log --stat "$range" | head -3000)
-docs_index=$(find "$TERMINAL_REPO/docs" -name '*.md' 2>/dev/null | head -50)
-claude_md=$(find "$TERMINAL_REPO" -maxdepth 3 -name 'CLAUDE.md' 2>/dev/null | head -20)
+# Keep the prompt bounded. Drift only needs a map of changed surfaces and a
+# small commit summary; the agent can open exact files if a listed path is
+# suspicious.
+changed_total=$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')
+changed_excerpt=$(printf '%s\n' "$changed" | sed '/^$/d' | head -200)
+if [ "${changed_total:-0}" -gt 200 ]; then
+  changed_excerpt="$changed_excerpt
+... truncated: $changed_total changed files total"
+fi
+commit_excerpt=$(git -C "$TERMINAL_REPO" log --oneline --decorate=no "$range" 2>/dev/null | head -80)
+source_touches=$(printf '%s\n' "$changed" | grep -E '^(src|lib|app|packages|cmd|internal|server|client|web|api)/' | head -120 || true)
+docs_index=$(cd "$TERMINAL_REPO" && find docs -name '*.md' 2>/dev/null | sort | head -40)
+claude_md=$(cd "$TERMINAL_REPO" && find . -maxdepth 3 -name 'CLAUDE.md' 2>/dev/null | sed 's#^\./##' | sort | head -12)
 
 # Build the prompt in a tmp file — nesting a heredoc inside $(cat <<EOF ...)
 # is fragile across bash versions; writing to a file and reading back with
@@ -99,11 +107,14 @@ cat > "$prompt_file" <<EOF
 You are the drift-auditor for repo $TERMINAL_REPO. Compare what the docs claim
 against what the code does in the commits ${last:-HEAD~50}..$head.
 
-Changed files:
-$changed
+Changed files (capped):
+$changed_excerpt
 
-Commit log (excerpt):
-$diff_excerpt
+Commit summary (capped):
+$commit_excerpt
+
+Source-like changed paths (capped):
+$source_touches
 
 Doc files to verify against:
 $docs_index
@@ -122,6 +133,13 @@ Categorize each finding using this catalog from .agents/drift.md:
 Write the audit report to $report with frontmatter listing the finding count
 per category, then a sectioned body per finding (file path + line + the doc
 that's drifting + the code that contradicts it).
+
+Token discipline:
+- Do not read the whole repo.
+- Open only the listed docs/code paths that are needed to prove or disprove a
+  finding.
+- Prefer grep/rg snippets with small context over full-file reads.
+- Keep the report concise; put only evidence needed to act.
 
 For each non-trivial finding (everything except broken-path / renamed-symbol
 where the substitution is mechanical), file a backlog ticket via:
