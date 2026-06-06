@@ -87,6 +87,7 @@ bootstrap.sh                  inject the workflow into an existing repo
     new-agent/                create repo-local TerMinal agents (.agents/<id>.sh + .json)
     new-persistent-agent/     create global memory-aware TerMinal agents
     new-schedule/             add TerMinal launchd-backed schedules for existing agents
+    new-knowledge/            add repo/global Knowledge Base links, media, snippets
     new-snippet/              add one-click TerMinal terminal snippets
     terminal-widget/          add repo-specific TerMinal sidebar widgets
 .codex/
