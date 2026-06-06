@@ -29,10 +29,10 @@ all the context needed to work well. Invoked as:
 ```
 
 The argument is the session **goal** (verbatim → `goal:` in frontmatter). The
-session doc lives at `sessions/<id>-<slug>/session.md` and follows the strict
-schema in [`SESSION_EXAMPLE.md`](./SESSION_EXAMPLE.md). It is the single source
-of truth for the session — every later skill (and `/session-end`) reads and
-updates it.
+session doc lives at `.TerMinal/sessions/<id>-<slug>/session.md` in v2 repos
+(legacy v1: `sessions/<id>-<slug>/session.md`) and follows the strict schema in
+[`SESSION_EXAMPLE.md`](./SESSION_EXAMPLE.md). It is the single source of truth
+for the session — every later skill (and `/session-end`) reads and updates it.
 
 ## Process
 
@@ -40,11 +40,12 @@ updates it.
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel)"
+SESSIONS_DIR=$([ -d "$ROOT/sessions" ] && [ ! -f "$ROOT/.TerMinal/template.json" ] && echo "$ROOT/sessions" || echo "$ROOT/.TerMinal/sessions")
 id=$("$ROOT/.claude/skills/session-start/bin/next-session-id")   # e.g. 0007
 ```
 
-Never hand-edit `sessions/.next-id`. Derive a kebab `slug` (≤ 6 words) from the
-goal. Create the directory: `mkdir -p "sessions/${id}-${slug}"`.
+Never hand-edit `.next-id`. Derive a kebab `slug` (≤ 6 words) from the goal.
+Create the directory: `mkdir -p "$SESSIONS_DIR/${id}-${slug}"`.
 
 ### 2. Seed context (the high-value step)
 
@@ -87,7 +88,7 @@ Keep it realistic for one session; defer the rest to Follow-ups.
 
 ### 4. Write the session doc
 
-Write `sessions/<id>-<slug>/session.md` using the SESSION_EXAMPLE schema.
+Write `$SESSIONS_DIR/<id>-<slug>/session.md` using the SESSION_EXAMPLE schema.
 Populate **all** frontmatter fields — `id`, `slug`, `anchor: SES-<zero-padded
 id>`, `title` (a short headline from the goal — the listers display it), `status:
 active`, `started:` now, `ended: null`, `goal` (verbatim), `tickets`,
@@ -122,7 +123,7 @@ referencing, and leave `future`/`icebox` ones as-is.
 Refresh the human-facing snapshot: `.claude/bin/status > .status.md` (gitignored;
 the at-a-glance state for whoever is managing agents in this repo).
 
-Point the user at `sessions/<id>-<slug>/session.md` and give a tight summary:
+Point the user at the session doc path and give a tight summary:
 the goal, the in-scope tickets, the key context pointers (notable research /
 prior-session follow-ups), and the first 3 checklist items. Then start work (or
 wait, if the user only wanted the session seeded).
@@ -138,7 +139,7 @@ wait, if the user only wanted the session seeded).
 
 ## What NOT to do
 
-- Don't allocate ids by hand-editing `sessions/.next-id` — use the script.
+- Don't allocate ids by hand-editing `.next-id` — use the script.
 - Don't start writing code before the session doc exists — the doc is the
   central state, seed it first.
 - Don't dump the entire backlog into Context — only what's relevant to the goal.

@@ -74,10 +74,10 @@ bootstrap.sh                  inject the workflow into an existing repo
     session-start/            open a session: seed live doc + TDD checklist
     session-end/              close a session: document, clean up, file follow-ups
     pr-creation/              ticket → branch → PR/MR → link back to ticket
-    code-review/              Codex review → in-repo .reviews/ artifacts
+    code-review/              Codex review → in-repo .TerMinal/reviews artifacts
     merge-sync/               reconcile tickets ↔ reality (close merged + drift sweep)
     test-suite/               ad-hoc chat-only test run (the cheap inner loop)
-    check/                    cadence repo inspections → .checks/ (dead-code, …)
+    check/                    cadence repo inspections → .TerMinal/checks (dead-code, …)
     security-scan/            deterministic security floor (CVE/secrets/SAST)
     document/ document-audit/ knowledge base capture + rot check
     notify/                   on-demand AFK Telegram bridge
@@ -100,18 +100,26 @@ bootstrap.sh                  inject the workflow into an existing repo
 .github/workflows/ci.yml      format + typecheck + test (+ optional eval gate)
 .github/PULL_REQUEST_TEMPLATE.md  + .gitlab/merge_request_templates/  PR/MR checklist
 .editorconfig                 uniform whitespace across editors
-.TerMinal/widgets.json   repo-specific terminal sidebar widgets
-.TerMinal/snippets.json  repo-owned quick prompt snippets (app presets stay app-owned)
+.TerMinal/
+  template.json          project-template schema/version marker (v2 layout)
+  widgets.json           repo-specific terminal sidebar widgets
+  snippets.json          repo-owned quick prompt snippets (app presets stay app-owned)
+  backlog/.next-id       ticket counter (tickets land here as NNNN-slug.md)
+  sessions/              live session docs (central state), NNNN-slug/
+  reviews/               in-repo code-review artifacts, per PR/MR
+  checks/                in-repo cadence-inspection artifacts, per kind
+  reports/               scheduled-agent run artifacts, per kind
 .status.md                    live human status snapshot (gitignored, generated)
 docs/
   decisions/                  ADRs (append-only; 0001 is the template)
   architecture.md             evergreen system overview (edit in place)
   runbooks/  learnings/        ops procedures + non-obvious findings
-backlog/.next-id              ticket counter (tickets land here as NNNN-slug.md)
-sessions/                     live session docs (central state), NNNN-slug/
-.reviews/                     in-repo code-review artifacts, per PR/MR
-.checks/                      in-repo cadence-inspection artifacts, per kind
 ```
+
+Layout note: v2 keeps TerMinal-owned workflow state under `.TerMinal/`.
+Existing v1 repos with top-level `backlog/`, `sessions/`, `.reviews/`,
+`.checks/`, or `reports/` continue to work; bootstrap repairs v1 in place and
+does not move existing data.
 
 ## The loop
 

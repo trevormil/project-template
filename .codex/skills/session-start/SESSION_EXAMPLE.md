@@ -16,10 +16,12 @@ prior_sessions: []
 ---
 
 Canonical schema reference for a session's live doc. This file is **not** a real
-session (the `bin/sessions` lister only matches `sessions/NNNN-slug/session.md`,
-and a `0` id makes it inert). Real session docs live at
-`sessions/NNNN-slug/session.md`. The directory may also hold scratch files
-(generated checklists, intermediate analysis) alongside `session.md`.
+session (the `bin/sessions` lister only matches
+`.TerMinal/sessions/NNNN-slug/session.md` or legacy
+`sessions/NNNN-slug/session.md`, and a `0` id makes it inert). Real session
+docs live at `.TerMinal/sessions/NNNN-slug/session.md`. The directory may also
+hold scratch files (generated checklists, intermediate analysis) alongside
+`session.md`.
 
 ## Frontmatter fields (all required; arrays may be empty `[]`)
 

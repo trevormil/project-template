@@ -18,8 +18,8 @@
 //   each finding: { title, file, line, severity, axis, description, fix_prompt? }
 //
 // Writes:
-//   .reviews/<pr-number>/findings.json   (merged + dedup'd + state-managed)
-//   .reviews/<pr-number>/suggestions.json
+//   .TerMinal/reviews/<pr-number>/findings.json   (v2)
+//   .TerMinal/reviews/<pr-number>/suggestions.json
 //
 // Prints the merged findings array (JSON) to stdout for the artifact body.
 
@@ -39,7 +39,9 @@ function idFor(f) {
     .slice(0, 10)
 }
 
-const dir = `.reviews/${pr}`
+const reviewRoot =
+  existsSync('.reviews') && !existsSync('.TerMinal/template.json') ? '.reviews' : '.TerMinal/reviews'
+const dir = `${reviewRoot}/${pr}`
 mkdirSync(dir, { recursive: true })
 
 const findingsPath = `${dir}/findings.json`

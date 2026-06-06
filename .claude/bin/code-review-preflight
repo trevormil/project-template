@@ -96,6 +96,9 @@ const fileList = files
   .map((f) => f.path || f.new_path || f.filename || '')
   .filter(Boolean)
 
+const reviewRoot =
+  existsSync('.reviews') && !existsSync('.TerMinal/template.json') ? '.reviews' : '.TerMinal/reviews'
+
 // ---------------------------------------------------------------------------
 // diff hash — short-circuit cached reviews on rebase/amend
 // ---------------------------------------------------------------------------
@@ -113,7 +116,7 @@ try {
 
 // Look for cached artifact with matching diff_hash
 function findCachedArtifact() {
-  const dir = `.reviews/${prNumber}`
+  const dir = `${reviewRoot}/${prNumber}`
   if (!existsSync(dir)) return null
   for (const f of readdirSync(dir)) {
     if (!f.endsWith('.md') || f.length < 7) continue
@@ -130,7 +133,7 @@ function findCachedArtifact() {
 }
 
 // Self short-circuit (re-run on same SHA)
-const ownArtifact = `.reviews/${prNumber}/${shortSha}.md`
+const ownArtifact = `${reviewRoot}/${prNumber}/${shortSha}.md`
 if (existsSync(ownArtifact)) {
   // Already reviewed at this exact SHA
   emitPacket({ short_circuit: 'already_reviewed', artifact: ownArtifact })
@@ -206,8 +209,8 @@ else if (allDocs) reviewKindHint = 'docs-only'
 // ---------------------------------------------------------------------------
 // prior findings state — carry forward across iterations
 // ---------------------------------------------------------------------------
-const findingsPath = `.reviews/${prNumber}/findings.json`
-const suggestionsPath = `.reviews/${prNumber}/suggestions.json`
+const findingsPath = `${reviewRoot}/${prNumber}/findings.json`
+const suggestionsPath = `${reviewRoot}/${prNumber}/suggestions.json`
 let priorFindings = []
 let priorSuggestions = []
 try {
@@ -294,7 +297,7 @@ if (runner) {
     .update(runner.cmd + '|' + hashSourceTree())
     .digest('hex')
     .slice(0, 16)
-  const cacheDir = `.reviews/.cache`
+  const cacheDir = `${reviewRoot}/.cache`
   const cachePath = join(cacheDir, `test-${testCacheKey}.json`)
   if (existsSync(cachePath)) {
     try {

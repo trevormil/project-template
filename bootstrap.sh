@@ -4,7 +4,7 @@
 #   ./bootstrap.sh /path/to/target-repo
 #
 # Copies the workflow machinery (.claude/.codex skills, .claude hooks/settings, .agents
-# contracts, CI, docs skeleton, backlog/sessions counters, .reviews store) into
+# contracts, CI, docs skeleton, and TerMinal project state scaffolds into
 # the target. Workflow files are overwritten (they ARE the workflow); your data
 # and existing docs are never clobbered. Anything that would clobber an existing
 # file is written alongside as `<name>.workflow` for you to merge by hand.
@@ -25,6 +25,15 @@ DST="$(cd "$DST" && pwd)"
 say() { printf '  %s\n' "$1"; }
 
 echo "Bootstrapping workflow into: $DST"
+
+if [ -f "$DST/.TerMinal/template.json" ]; then
+  LAYOUT="v2"
+elif [ -d "$DST/backlog" ] || [ -d "$DST/sessions" ] || [ -d "$DST/.reviews" ] || [ -d "$DST/.checks" ] || [ -d "$DST/reports" ]; then
+  LAYOUT="v1"
+else
+  LAYOUT="v2"
+fi
+say "project-template layout: $LAYOUT"
 
 # --- workflow machinery (overwrite — this is the workflow) -------------------
 echo "[workflow] .claude/ + .codex/ + .agents/ + CI"
@@ -69,19 +78,34 @@ else
 fi
 
 # --- data scaffolds (seed only if absent — never clobber your data) ----------
-echo "[data] backlog/ sessions/ .reviews/ .checks/"
-mkdir -p "$DST/backlog" "$DST/sessions" "$DST/.reviews" "$DST/.checks"
-[ -f "$DST/backlog/.next-id" ]   || cp "$SRC/backlog/.next-id"   "$DST/backlog/.next-id"
-[ -f "$DST/sessions/.next-id" ]  || cp "$SRC/sessions/.next-id"  "$DST/sessions/.next-id"
-[ -f "$DST/sessions/README.md" ] || cp "$SRC/sessions/README.md" "$DST/sessions/README.md"
-[ -f "$DST/.reviews/README.md" ] || cp "$SRC/.reviews/README.md" "$DST/.reviews/README.md"
-[ -f "$DST/.checks/README.md" ]  || cp "$SRC/.checks/README.md"  "$DST/.checks/README.md"
+echo "[data] project state ($LAYOUT)"
 mkdir -p "$DST/.TerMinal"
+if [ "$LAYOUT" = "v1" ]; then
+  mkdir -p "$DST/backlog" "$DST/sessions" "$DST/.reviews" "$DST/.checks" "$DST/reports"
+  [ -f "$DST/backlog/.next-id" ]   || cp "$SRC/.TerMinal/backlog/.next-id"   "$DST/backlog/.next-id"
+  [ -f "$DST/sessions/.next-id" ]  || cp "$SRC/.TerMinal/sessions/.next-id"  "$DST/sessions/.next-id"
+  [ -f "$DST/sessions/README.md" ] || cp "$SRC/.TerMinal/sessions/README.md" "$DST/sessions/README.md"
+  [ -f "$DST/.reviews/README.md" ] || cp "$SRC/.TerMinal/reviews/README.md" "$DST/.reviews/README.md"
+  [ -f "$DST/.checks/README.md" ]  || cp "$SRC/.TerMinal/checks/README.md"  "$DST/.checks/README.md"
+  [ -f "$DST/reports/README.md" ]  || cp "$SRC/.TerMinal/reports/README.md" "$DST/reports/README.md"
+  say "legacy backlog/, sessions/, .reviews/, .checks/, reports/ repaired (existing data untouched)"
+else
+  [ -f "$DST/.TerMinal/template.json" ] || \
+    cp "$SRC/.TerMinal/template.json" "$DST/.TerMinal/template.json"
+  mkdir -p "$DST/.TerMinal/backlog" "$DST/.TerMinal/sessions" "$DST/.TerMinal/reviews" "$DST/.TerMinal/checks" "$DST/.TerMinal/reports"
+  [ -f "$DST/.TerMinal/backlog/.next-id" ]   || cp "$SRC/.TerMinal/backlog/.next-id"   "$DST/.TerMinal/backlog/.next-id"
+  [ -f "$DST/.TerMinal/sessions/.next-id" ]  || cp "$SRC/.TerMinal/sessions/.next-id"  "$DST/.TerMinal/sessions/.next-id"
+  [ -f "$DST/.TerMinal/sessions/README.md" ] || cp "$SRC/.TerMinal/sessions/README.md" "$DST/.TerMinal/sessions/README.md"
+  [ -f "$DST/.TerMinal/reviews/README.md" ]  || cp "$SRC/.TerMinal/reviews/README.md"  "$DST/.TerMinal/reviews/README.md"
+  [ -f "$DST/.TerMinal/checks/README.md" ]   || cp "$SRC/.TerMinal/checks/README.md"   "$DST/.TerMinal/checks/README.md"
+  [ -f "$DST/.TerMinal/reports/README.md" ]  || cp "$SRC/.TerMinal/reports/README.md"  "$DST/.TerMinal/reports/README.md"
+  say ".TerMinal/{backlog,sessions,reviews,checks,reports} seeded (existing data untouched)"
+fi
 [ -f "$DST/.TerMinal/widgets.json" ] || \
   cp "$SRC/.TerMinal/widgets.json" "$DST/.TerMinal/widgets.json"
 [ -f "$DST/.TerMinal/snippets.json" ] || \
   cp "$SRC/.TerMinal/snippets.json" "$DST/.TerMinal/snippets.json"
-say "backlog/.next-id, sessions/.next-id, .reviews + .checks READMEs, terminal widgets/snippets seeded (existing left untouched)"
+say "terminal widgets/snippets seeded (existing left untouched)"
 
 # --- docs skeleton (seed only if absent) -------------------------------------
 echo "[docs] docs/{decisions,runbooks,learnings} + architecture.md"
@@ -107,7 +131,12 @@ fi
 # --- .gitignore — append our entries if missing ------------------------------
 echo "[gitignore] appending workflow entries if missing"
 touch "$DST/.gitignore"
-for line in "backlog/.next-id.lock" "sessions/.next-id.lock" ".status.md"; do
+if [ "$LAYOUT" = "v1" ]; then
+  lock_lines=("backlog/.next-id.lock" "sessions/.next-id.lock" ".status.md")
+else
+  lock_lines=(".TerMinal/backlog/.next-id.lock" ".TerMinal/sessions/.next-id.lock" ".status.md")
+fi
+for line in "${lock_lines[@]}"; do
   grep -qxF "$line" "$DST/.gitignore" || printf '%s\n' "$line" >> "$DST/.gitignore"
 done
 say ".gitignore lock-dir entries ensured"

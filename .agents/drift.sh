@@ -76,8 +76,13 @@ case "$engine" in
   *) model=${TERMINAL_MODEL:-sonnet} ;;
 esac
 short=$(git -C "$TERMINAL_REPO" rev-parse --short "$head")
-mkdir -p "$TERMINAL_REPO/reports/drift"
-report="$TERMINAL_REPO/reports/drift/${short}.md"
+if [ -d "$TERMINAL_REPO/reports" ] && [ ! -f "$TERMINAL_REPO/.TerMinal/template.json" ]; then
+  reports_dir="$TERMINAL_REPO/reports"
+else
+  reports_dir="$TERMINAL_REPO/.TerMinal/reports"
+fi
+mkdir -p "$reports_dir/drift"
+report="$reports_dir/drift/${short}.md"
 
 # Limit the diff size we hand to the engine — 3000 lines is enough to spot drift
 # patterns without blowing the context window on huge refactors.

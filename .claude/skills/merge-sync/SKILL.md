@@ -1,6 +1,6 @@
 ---
 name: merge-sync
-description: "Reconcile tickets+backlog with reality: close tickets whose PRs merged, scrub merged URLs, sweep status drift. Edits backlog only, never merges. Use after merging a stack or whenever PRs have landed."
+description: "Reconcile tickets/backlog with reality: close tickets whose PRs merged, scrub merged URLs, sweep status drift. Edits ticket files only, never merges. Use after merging a stack or whenever PRs have landed."
 ---
 
 # /merge-sync — Reconcile tickets with merged PRs
@@ -8,7 +8,8 @@ description: "Reconcile tickets+backlog with reality: close tickets whose PRs me
 The merge is human-only (global §8), so after the human merges, ticket state is
 stale: tickets still say `in-progress` and still list the now-merged PR/MR in
 `prs:`. This skill closes the loop. It **never merges** — it only reads PR/MR
-state from the forge and updates `backlog/` files.
+state from the forge and updates the active ticket directory
+(`.TerMinal/backlog/` in v2, `backlog/` in legacy v1).
 
 ## Process
 
@@ -29,7 +30,7 @@ It runs one `gh pr list --state merged` (or `glab mr list`, resolved via
 only when its linked PR is *actually* merged (sets `status: closed` + `updated:`
 today), scrubs merged URLs (handles all `prs:` formats), and scrubs
 `closed`-but-still-linked drift. A single PR closing multiple tickets is handled
-naturally — every ticket listing that URL reconciles. **Only** edits `backlog/`.
+naturally — every ticket listing that URL reconciles. **Only** edits ticket files.
 
 Review the dry-run plan first; run `--apply` when it looks right. For tickets
 that landed via a scheduled/`/bg` MR merge, also call
@@ -70,7 +71,7 @@ auto-`/document` or file new tickets — this is pure reconciliation.
 ## Hard rules
 
 1. **Never merge.** Read PR state only; `gh pr merge` is blocked by the hook.
-2. **Only edit `backlog/` files.** No code changes, no doc writes.
+2. **Only edit ticket files.** No code changes, no doc writes.
 3. **Don't close a ticket whose PR isn't actually merged** — verify via `gh`,
    don't assume from the `prs:` link alone.
 

@@ -76,9 +76,11 @@ accumulates `/merge-sync` output, `/stacked-mr` build logs, per-PR diffs, test
 output, and N review verdicts. After ~2–3 passes the context is dominated by
 stale tool results that no future step will read.
 
-**Rule:** state of record lives on disk — `backlog/`, in-repo `.reviews/`, the
-ledger (`sessions/<id>/stacked-mr.md`), and the forge — so the conversation does
-*not* need to hold any of it. Compact aggressively; re-read from disk on demand.
+**Rule:** state of record lives on disk — `.TerMinal/backlog/`, in-repo
+`.TerMinal/reviews/`, the ledger (`.TerMinal/sessions/<id>/stacked-mr.md`),
+and the forge — so the conversation does *not* need to hold any of it. Legacy
+v1 repos may still use `backlog/`, `.reviews/`, and `sessions/`. Compact
+aggressively; re-read from disk on demand.
 
 Checkpoints — at each of these, run `/compact` (or summarize-and-purge) before
 proceeding:

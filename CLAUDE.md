@@ -15,7 +15,7 @@ don't trust your internal clock, nothing is static) applies. The loop:
 
 ```
 /session-start "<goal>"   →  seed live session doc (central state)
-   /ticket                →  file/triage as backlog/NNNN-slug.md
+   /ticket                →  file/triage as .TerMinal/backlog/NNNN-slug.md
    feature branch         →  off main (or off prior PR in a stack)
    implement TDD-first    →  failing test → code → green
    /pr-creation           →  push + open PR, link into ticket
@@ -44,9 +44,9 @@ testing ticket for any new behavior without a test.
 
 ## [3] Sessions are central state
 
-Live session doc at `sessions/NNNN-slug/session.md` — goal, context,
-checklist, log, decisions, outcomes, follow-ups. Exactly **one active**
-at a time. Schema in
+Live session doc at `.TerMinal/sessions/NNNN-slug/session.md` — goal,
+context, checklist, log, decisions, outcomes, follow-ups. Exactly **one
+active** at a time. Legacy v1 repos may still use `sessions/`. Schema in
 [`.claude/skills/session-start/SESSION_EXAMPLE.md`](./.claude/skills/session-start/SESSION_EXAMPLE.md).
 
 `.status.md` (gitignored) is the ephemeral at-a-glance for the developer
@@ -56,7 +56,8 @@ needs-you events). Feeds the TerMinal sidebar (`/terminal-widget`).
 
 ## [4] Tickets
 
-`backlog/NNNN-slug.md`, managed by `/ticket`. Allocate ids with
+`.TerMinal/backlog/NNNN-slug.md`, managed by `/ticket` (legacy v1:
+`backlog/NNNN-slug.md`). Allocate ids with
 `.claude/skills/ticket/bin/next-ticket-id` (never hand-edit `.next-id`).
 List with `.claude/skills/ticket/bin/tickets [status] [priority] [horizon]`.
 Prose lives **after** the closing `---`, never inside frontmatter.
@@ -121,9 +122,9 @@ human-only.
 
 ## [6] Code review & checks
 
-`/code-review` delegates to Codex, writes one combined review+tests
-artifact at `.reviews/<pr>/<sha>.md` (+ `findings.json` /
-`suggestions.json`). Contract:
+`/code-review` delegates to Codex, writes one combined review+tests artifact at
+`.TerMinal/reviews/<pr>/<sha>.md` (+ `findings.json` / `suggestions.json`;
+legacy v1: `.reviews/<pr>/<sha>.md`). Contract:
 [`.agents/code-review.md`](./.agents/code-review.md).
 
 - **Merge bar:** `verdict: approve` + `test_status: pass` + zero findings
@@ -137,7 +138,8 @@ artifact at `.reviews/<pr>/<sha>.md` (+ `findings.json` /
 
 **Cadence checks** are the other half: `/check <kind>` runs a repo-level
 inspection (dead-code, dep-drift) on a cadence, writing dated artifacts
-to `.checks/<kind>/<sha>.md`. Each kind is a contract at
+to `.TerMinal/checks/<kind>/<sha>.md` (legacy v1: `.checks/<kind>/<sha>.md`).
+Each kind is a contract at
 `.agents/<kind>.md`. Checks are **advisory** — they report; cleanup
 becomes a ticket.
 

@@ -1,12 +1,13 @@
 ---
 name: ticket
-description: "Create and manage in-repo backlog tickets (backlog/NNNN-slug.md with YAML frontmatter); atomic ids, list/update/close. Portable. Use on /ticket, 'file/list/close a ticket', or describing work to track."
+description: "Create and manage in-repo backlog tickets (.TerMinal/backlog/NNNN-slug.md in v2, backlog/NNNN-slug.md in legacy v1); atomic ids, list/update/close. Portable. Use on /ticket, 'file/list/close a ticket', or describing work to track."
 ---
 
 # /ticket — In-repo backlog tickets
 
-In-repo markdown tickets at `backlog/NNNN-slug.md` — versioned with the
-code, no external service.
+In-repo markdown tickets at `.TerMinal/backlog/NNNN-slug.md` in v2 repos
+(legacy v1: `backlog/NNNN-slug.md`) — versioned with the code, no external
+service.
 
 ## Fast path: TerMinal MCP tools (skip the rest if available)
 
@@ -30,14 +31,16 @@ you. Shell-helper path below is the fallback when MCP isn't installed.
 
 ## Where tickets live
 
-`<repo-root>/backlog/NNNN-kebab-slug.md`. Schema: [`EXAMPLE.md`](./EXAMPLE.md).
-Counter at `backlog/.next-id`.
+`<repo-root>/.TerMinal/backlog/NNNN-kebab-slug.md` in v2 repos. Schema:
+[`EXAMPLE.md`](./EXAMPLE.md). Counter at `.TerMinal/backlog/.next-id`.
+Legacy v1 repos that already have `backlog/` continue to use `backlog/.next-id`.
 
 ## Helper scripts (carried by this skill)
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel)"
 SKILL="$ROOT/.claude/skills/ticket"
+BACKLOG_DIR=$([ -d "$ROOT/backlog" ] && [ ! -f "$ROOT/.TerMinal/template.json" ] && echo "$ROOT/backlog" || echo "$ROOT/.TerMinal/backlog")
 
 "$SKILL/bin/next-ticket-id"      # atomically allocate next id
 "$SKILL/bin/tickets"             # list all
@@ -47,7 +50,7 @@ SKILL="$ROOT/.claude/skills/ticket"
 ```
 
 `next-ticket-id` uses an `mkdir` lock (parallel-safe, no `flock`) and
-bootstraps `backlog/` if missing. Both must be executable.
+bootstraps the active backlog directory if missing. Both must be executable.
 
 ## Routing
 
@@ -81,7 +84,7 @@ Never hand-edit `.next-id` — use the script.
 
 ### 3. Write the file
 
-Path: `backlog/<id>-<kebab-slug>.md` (slug ≤ 6 words).
+Path: `$BACKLOG_DIR/<id>-<kebab-slug>.md` (slug ≤ 6 words).
 
 ```yaml
 ---
@@ -169,10 +172,10 @@ installed it — skip. Standalone:
 
 1. Copy `.claude/skills/ticket/` into the target repo.
 2. `chmod +x .claude/skills/ticket/bin/*`.
-3. Add `backlog/.next-id.lock` to `.gitignore`.
+3. Add `.TerMinal/backlog/.next-id.lock` (or legacy `backlog/.next-id.lock`) to `.gitignore`.
 
-First call bootstraps `backlog/` + `.next-id`. Commit `backlog/` so the
-tracker travels with the code.
+First call bootstraps the backlog directory + `.next-id`. Commit the backlog
+directory so the tracker travels with the code.
 
 ## Activity
 

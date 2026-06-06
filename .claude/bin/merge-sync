@@ -12,12 +12,16 @@
 # Scope: the UNAMBIGUOUS, judgment-free part of /merge-sync (CLAUDE.md [4.1]).
 # The drift sweep that needs a thinker (stuck-blocker-cleared, long-stale-open)
 # stays in the skill. This only ever closes a ticket whose linked PR is actually
-# merged, and only edits backlog/ files (never merges, never touches code).
+# merged, and only edits ticket files (never merges, never touches code).
 # Portable (macOS + Linux).
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-BACKLOG="$ROOT/backlog"
+if [ -d "$ROOT/backlog" ] && [ ! -f "$ROOT/.TerMinal/template.json" ]; then
+  BACKLOG="$ROOT/backlog"
+else
+  BACKLOG="$ROOT/.TerMinal/backlog"
+fi
 APPLY=0
 MERGED_FROM=""
 
@@ -31,7 +35,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-[ -d "$BACKLOG" ] || { echo "merge-sync: no backlog/ at $ROOT" >&2; exit 1; }
+[ -d "$BACKLOG" ] || { echo "merge-sync: no ticket backlog at $BACKLOG" >&2; exit 1; }
 today="$(date +%Y-%m-%d)"
 
 # --- merged URL set --------------------------------------------------------

@@ -2,8 +2,9 @@
 
 Reviews a single PR at a specific commit and emits **one combined artifact**
 containing both the test-run summary and the structured findings. Artifacts
-live **in this repo** under `.reviews/<pr-number>/` — versioned with the code,
-no external dashboard or central harness.
+live **in this repo** under `.TerMinal/reviews/<pr-number>/` in v2 repos
+(legacy v1: `.reviews/<pr-number>/`) — versioned with the code, no external
+dashboard or central harness.
 
 Aim: a Greptile-style review — broad in coverage, conservative in confidence,
 explicit about what *evidence* led to each finding, and **scored on six axes**
@@ -34,9 +35,9 @@ don't redo this work.
 ## Output location
 
 ```
-.reviews/<pr-number>/<short_sha>.md     # one file per commit reviewed
-.reviews/<pr-number>/findings.json      # canonical per-finding state
-.reviews/<pr-number>/suggestions.json   # canonical per-suggestion state
+.TerMinal/reviews/<pr-number>/<short_sha>.md     # one file per commit reviewed
+.TerMinal/reviews/<pr-number>/findings.json      # canonical per-finding state
+.TerMinal/reviews/<pr-number>/suggestions.json   # canonical per-suggestion state
 ```
 
 `<short_sha>` is the first 7 hex chars of the head commit. `<pr-number>` is the

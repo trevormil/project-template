@@ -2,18 +2,22 @@
 # Atomically allocate the next ticket ID.
 #
 # Portable: uses a mkdir-based lock (works on macOS + Linux; no `flock`
-# dependency). Bootstraps backlog/ and the counter on first use, so dropping
+# dependency). Bootstraps the ticket directory and counter on first use, so dropping
 # this skill into a fresh repo "just works".
 #
 #   id=$("$(git rev-parse --show-toplevel)/.claude/skills/ticket/bin/next-ticket-id")
-#   echo "backlog/${id}-my-slug.md"
+#   echo "$BACKLOG_REL/${id}-my-slug.md"
 #
-# The counter lives in backlog/.next-id (committed). The lock dir
-# backlog/.next-id.lock is transient (gitignore it).
+# v2 repos use .TerMinal/backlog/.next-id; legacy v1 repos use backlog/.next-id.
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-BACKLOG="$ROOT/backlog"
+if [ -d "$ROOT/backlog" ] && [ ! -f "$ROOT/.TerMinal/template.json" ]; then
+  BACKLOG_REL="backlog"
+else
+  BACKLOG_REL=".TerMinal/backlog"
+fi
+BACKLOG="$ROOT/$BACKLOG_REL"
 COUNTER="$BACKLOG/.next-id"
 LOCK="$BACKLOG/.next-id.lock"
 

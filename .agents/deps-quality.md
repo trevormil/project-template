@@ -51,13 +51,13 @@ If `HEAD == lastScannedSha` AND last advisory feed update was before
    - Safe bumps + auto-fix changes → single PR `chore: deps + lint sweep`.
    - Critical CVE that can't be auto-fixed → HITL via `.claude/bin/hitl`.
    - Aging TODO/FIXME (>90d) → ticket per cluster.
-7. **Write artifact** to `reports/deps-quality/<short_sha>.md`.
+7. **Write artifact** to `.TerMinal/reports/deps-quality/<short_sha>.md`.
 8. **Update state** — `lastScannedSha`, `lastAuditAt`, `lastDeps`.
 9. **Activity** — `.claude/bin/activity check "Deps+quality · <N> bumps · <C> CVEs" "@ <short_sha>"`.
 
 ## Output artifact
 
-`reports/deps-quality/<short_sha>.md`:
+`.TerMinal/reports/deps-quality/<short_sha>.md`:
 
 ```yaml
 ---
@@ -75,7 +75,7 @@ quality:
   aging_todos: 5
 pr_opened: https://github.com/owner/repo/pull/N
 hitl_items: []
-tickets_filed: [backlog/0126-todo-cleanup.md]
+tickets_filed: [.TerMinal/backlog/0126-todo-cleanup.md]
 status: ok
 ---
 ```

@@ -1,11 +1,12 @@
 ---
 name: code-review
-description: "Delegate a GitHub/GitLab PR review to Codex: a deterministic preflight does recon, then Codex scores six axes into one artifact at .reviews/<pr>/<sha>.md. Use on /code-review or 'review this PR'."
+description: "Delegate a GitHub/GitLab PR review to Codex: a deterministic preflight does recon, then Codex scores six axes into one artifact at .TerMinal/reviews/<pr>/<sha>.md (v2) or .reviews/<pr>/<sha>.md (legacy v1). Use on /code-review or 'review this PR'."
 ---
 
 # /code-review — PR review with six-axis scoring + embedded tests
 
-Produces **one combined artifact** at `.reviews/<pr-number>/<short_sha>.md`.
+Produces **one combined artifact** at `.TerMinal/reviews/<pr-number>/<short_sha>.md`
+in v2 repos, or `.reviews/<pr-number>/<short_sha>.md` in legacy v1 repos.
 The schema, scoring rubric, severity rules, and verdict logic live in
 [`.agents/code-review.md`](../../../.agents/code-review.md).
 
@@ -55,16 +56,19 @@ you what to do:
 Sample (for `tests_red`):
 
 ```bash
+REVIEW_ROOT=$([ -d .reviews ] && [ ! -f .TerMinal/template.json ] && echo .reviews || echo .TerMinal/reviews)
+mkdir -p "$REVIEW_ROOT/$PR"
+
 if [ "$EXIT" -eq 2 ]; then
   SC=$(jq -r '.short_circuit' "$PACKET")
   case "$SC" in
     already_reviewed) echo "✓ already reviewed: $(jq -r '.artifact' "$PACKET")"; exit 0 ;;
     diff_hash_match)  src=$(jq -r '.source_artifact' "$PACKET")
-                      dst=".reviews/$PR/$SHORT.md"
+                      dst="$REVIEW_ROOT/$PR/$SHORT.md"
                       cp "$src" "$dst"
                       sed -i '' "s/^short_sha:.*/short_sha: $SHORT/; s/^commit:.*/commit: $HEAD/" "$dst"
                       echo "✓ diff-hash cache hit" ; exit 0 ;;
-    tests_red)        ./fill-blocked-template.sh "$PACKET" > ".reviews/$PR/$SHORT.md"
+    tests_red)        ./fill-blocked-template.sh "$PACKET" > "$REVIEW_ROOT/$PR/$SHORT.md"
                       exit 0 ;;
   esac
 fi
@@ -105,15 +109,17 @@ useful work. When the completion notification arrives, run stage 3.
 **Stage 3 — finalize (deterministic):**
 
 ```bash
+REVIEW_ROOT=$([ -d .reviews ] && [ ! -f .TerMinal/template.json ] && echo .reviews || echo .TerMinal/reviews)
+
 # Extract the ```findings-new ... ``` block codex emitted in the artifact body
-awk '/```findings-new/{f=1;next} /```/{f=0} f' ".reviews/$PR/$SHORT.md" > /tmp/findings-new-$$.json
+awk '/```findings-new/{f=1;next} /```/{f=0} f' "$REVIEW_ROOT/$PR/$SHORT.md" > /tmp/findings-new-$$.json
 
 # Merge with prior findings.json — handles ids, first_seen_sha, auto-resolved
 STATS=$(./.claude/bin/findings-merge "$PR" "$HEAD" /tmp/findings-new-$$.json)
 
 # Extract scorecard from artifact frontmatter
 SCORECARD=$(yq -r '{correctness, security, architecture, conformance, quality, dependencies}' \
-  ".reviews/$PR/$SHORT.md" > /tmp/scorecard-$$.json)
+  "$REVIEW_ROOT/$PR/$SHORT.md" > /tmp/scorecard-$$.json)
 
 # Compute verdict deterministically
 TEST_STATUS=$(jq -r '.test_result.status' "$PACKET")
@@ -124,7 +130,7 @@ VERDICT_VAL=$(echo "$VERDICT" | jq -r '.verdict')
 MERGE_READY=$(echo "$VERDICT" | jq -r '.merge_ready')
 RISK_TIER=$(echo "$VERDICT" | jq -r '.risk_tier')
 sed -i '' "s/^verdict:.*/verdict: $VERDICT_VAL/; s/^merge_ready:.*/merge_ready: $MERGE_READY/; \
-           s/^risk_tier:.*/risk_tier: $RISK_TIER/" ".reviews/$PR/$SHORT.md"
+           s/^risk_tier:.*/risk_tier: $RISK_TIER/" "$REVIEW_ROOT/$PR/$SHORT.md"
 ```
 
 The two helper scripts eliminate the YAML-quoting class of bugs and the
@@ -156,7 +162,8 @@ deterministically from rules in the contract).
 end of the stack — each review still single-PR, each in its own worktree.
 Preflight runs in parallel per PR; codex calls run in parallel; helpers
 run after each codex returns. The diff-hash cache is shared via
-`.reviews/.cache/` so re-running stale stacks is near-free.
+`.TerMinal/reviews/.cache/` (or legacy `.reviews/.cache/`) so re-running stale
+stacks is near-free.
 
 ## Fallback
 

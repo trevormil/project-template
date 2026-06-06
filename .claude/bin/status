@@ -9,6 +9,13 @@ set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
 
+area_paths() {
+  case "$1" in
+    backlog) printf '%s\n' "$ROOT/.TerMinal/backlog" "$ROOT/backlog" ;;
+    reviews) printf '%s\n' "$ROOT/.TerMinal/reviews" "$ROOT/.reviews" ;;
+  esac
+}
+
 field() {
   awk -v key="$2" '
     NR==1 && $0=="---" { f=1; next }
@@ -23,7 +30,7 @@ repo="$(basename "$ROOT")"
 
 open=0; inprog=0; nextc=0; future=0; needs=""
 shopt -s nullglob 2>/dev/null || true
-for f in backlog/[0-9]*.md; do
+for f in $(for d in $(area_paths backlog); do ls -1 "$d"/[0-9]*.md 2>/dev/null; done | sort -r); do
   [ -e "$f" ] || continue
   st="$(field "$f" status)"; hz="$(field "$f" horizon)"; [ -z "$hz" ] && hz=now
   hitl="$(field "$f" hitl)"; id="$(field "$f" id)"; title="$(field "$f" title)"
@@ -38,7 +45,7 @@ done
 sess="$(.claude/skills/session-start/bin/sessions active 2>/dev/null | tail -n +3 | head -1)"
 
 reviews=""
-for d in .reviews/*/; do
+for d in $(for root in $(area_paths reviews); do ls -1d "$root"/*/ 2>/dev/null; done); do
   [ -d "$d" ] || continue
   latest="$(ls -1t "$d"/*.md 2>/dev/null | grep -v README | head -1)"
   [ -n "$latest" ] || continue

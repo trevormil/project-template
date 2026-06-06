@@ -6,7 +6,8 @@ description: "Take a backlog ticket from idea to open PR: feature branch → TDD
 # /pr-creation — Take a ticket from idea to open PR
 
 Orchestrates branch setup, implementation, and PR opening for a ticket tracked
-in this repo's `backlog/`. **Does not auto-trigger code review** — the user
+in this repo's `.TerMinal/backlog/` (legacy v1: `backlog/`). **Does not
+auto-trigger code review** — the user
 runs `/code-review` manually when ready, usually only at the end after
 iterating, to avoid burning review cycles on every push.
 
@@ -40,7 +41,8 @@ swap for `glab` on GitLab repos. Default branch: `main`.
 
 ## Inputs
 
-- `ticket_id` (preferred) — points to `backlog/<id>-<slug>.md` in THIS repo.
+- `ticket_id` (preferred) — points to `.TerMinal/backlog/<id>-<slug>.md`
+  (legacy v1: `backlog/<id>-<slug>.md`) in THIS repo.
   The skill reads the ticket for acceptance criteria. **One or more** ids — a PR
   may close several cohesive tickets (batch them; code review is the bottleneck).
 - OR `task_description` — start without a ticket; the skill invokes `/ticket`
@@ -50,7 +52,7 @@ swap for `glab` on GitLab repos. Default branch: `main`.
 
 ### 1. Read the ticket
 
-Open `backlog/<id>-*.md`. Confirm:
+Open `.TerMinal/backlog/<id>-*.md` (or legacy `backlog/<id>-*.md`). Confirm:
 - `status: open` (or `in-progress` if resuming) — if `closed`, stop and ask.
 - If `status: stuck`, re-check the blocker first. If it is clear, update the
   ticket to `in-progress` and continue; if it still blocks, leave it `stuck`,
@@ -149,7 +151,7 @@ change with the `auto-mergeable` label so the human can spot it in the MR
 list and batch-merge safe ones without a full /code-review cycle. Detection:
 
 ```bash
-nontxt=$(git diff --name-only "origin/main..HEAD" | grep -v -E '\.(md|json|ya?ml|txt)$|^backlog/|^reports/|^docs/|^.agents/|^.claude/' || true)
+nontxt=$(git diff --name-only "origin/main..HEAD" | grep -v -E '\.(md|json|ya?ml|txt)$|^\.TerMinal/(backlog|reports|reviews|checks)/|^backlog/|^reports/|^docs/|^.agents/|^.claude/' || true)
 if [ -z "$nontxt" ]; then
   case "$forge" in
     github) gh pr edit "$pr" --add-label "auto-mergeable" ;;
@@ -164,7 +166,8 @@ which scheduled agents should always tag.
 
 ### 7. Link the PR back to the ticket(s)
 
-For **each** ticket this PR closes, open `backlog/<id>-*.md`:
+For **each** ticket this PR closes, open `.TerMinal/backlog/<id>-*.md` (or
+legacy `backlog/<id>-*.md`):
 - Add the PR URL to `prs:`.
 - Bump `updated:` to today.
 - Leave `status: in-progress` (NOT `closed`) — only the human closes via merge.
