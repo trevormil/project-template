@@ -33,7 +33,10 @@ Keep listening until the user explicitly stops the loop. If the transport discon
 
 Keep loop traffic compact:
 
-- Read full logs locally, but quote only the minimum evidence needed.
+- Read logs through `scripts/bounded_context.py` or equivalent capped commands first.
+- Default log context: last 80 lines or 12,000 chars. Hard max without a specific reason: 200 lines or 20,000 chars.
+- Start with metadata, the latest event, a bounded log tail, and targeted file refs; expand only with `rg`, focused file reads, or exact timestamps.
+- Never feed an entire transcript, terminal scrollback, test log, or diff into the model.
 - Prefer file refs, command names, commit ids, and short summaries over pasted output.
 - Cap supervisor prompts to the next concrete action, one verification step, and one stop condition.
 - Ask the implementer for a tighter summary when an event is too large instead of processing a transcript dump.

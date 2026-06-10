@@ -40,6 +40,16 @@ Every loop message should be JSONL-compatible:
 
 Default to summaries, not transcripts. Keep `summary` to one line and keep `detail` bounded to the smallest useful evidence. Prefer file refs, command names, test names, commit ids, and short excerpts over pasted logs. If a payload would be large, send a summary plus a pointer to the log location.
 
+Hard defaults:
+
+- Supervisor log reads: 80 lines or 12,000 chars.
+- Supervisor hard max without a specific reason: 200 lines or 20,000 chars.
+- Implementer event detail: 40 lines or 8,000 chars.
+- Implementer hard max without supervisor request: 100 lines or 12,000 chars.
+- Supervisor prompts: one next action, one verification, one stop condition.
+
+Use deterministic bounded reads before LLM reasoning. Prefer `scripts/bounded_context.py <log-path>` when available; otherwise use capped `tail`, targeted `rg`, `git diff --stat`, `git diff --name-only`, and narrow file reads.
+
 ## Listener Invariant
 
 Both roles must keep listening until the user explicitly stops the loop:

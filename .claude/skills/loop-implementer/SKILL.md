@@ -37,6 +37,7 @@ Keep a listener active until the user explicitly stops the loop. If the listener
 Keep loop events compact:
 
 - Summarize terminal output; include only the lines needed to support the decision.
+- Default event detail: 40 output lines or 8,000 chars. Hard max without supervisor request: 100 lines or 12,000 chars.
 - Prefer file refs, commands, branch/commit ids, and test names over pasted files or long logs.
 - Put the exact decision needed in `summary`; keep `detail` bounded to evidence and proposed next step.
 - If the supervisor asks for more context, send a targeted excerpt rather than the full transcript.
