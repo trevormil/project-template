@@ -25,6 +25,18 @@ Repeat until the user stops the loop:
 3. Inspect the repo only as needed to make a better decision. Keep inspection read-only unless explicitly authorized.
 4. Research only when the next prompt depends on outside or changing facts.
 5. Return exactly one implementer prompt unless the right response is to wait.
+6. Immediately return to listening after every handled event, including `ready-for-review`, `complete`, `error`, and timeout handling.
+
+Keep listening until the user explicitly stops the loop. If the transport disconnects, reconnect or switch to the next fallback transport and emit a compact `status` event. Do not exit just because a prompt was sent or a completion was reviewed.
+
+## Token Discipline
+
+Keep loop traffic compact:
+
+- Read full logs locally, but quote only the minimum evidence needed.
+- Prefer file refs, command names, commit ids, and short summaries over pasted output.
+- Cap supervisor prompts to the next concrete action, one verification step, and one stop condition.
+- Ask the implementer for a tighter summary when an event is too large instead of processing a transcript dump.
 
 ## Prompt Contract
 
@@ -43,3 +55,4 @@ Use a clarification prompt when the implementer is about to guess. Use a stop pr
 - Do not send multiple competing prompts.
 - Do not approve destructive actions from context alone.
 - Do not mark the loop complete until the implementer has reported verification or a genuine blocker.
+- Do not stop listening while the user session is active.
