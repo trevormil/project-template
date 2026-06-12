@@ -14,9 +14,16 @@ service.
 When the `terminal-harness` MCP server is registered (ships with TerMinal,
 installs via Settings), use these instead of reading sections below:
 
-- **`file_ticket({repo, title, body?, type?, priority?, status?, source?})`** —
+- **`list_agents({repo?})`** — compact assignable agent list
+  (`id`, `scope`, `kind`) covering global defaults, repo-local agents, and
+  persistent agents.
+- **`file_ticket({repo, title, body?, type?, priority?, status?, source?, agentId?, agentScope?, agentKind?})`** —
   allocates next id, writes frontmatter, returns `{slug, id, path}`.
-- **`update_ticket({slug, status?, priority?, appendPrUrl?, removePrUrl?})`** —
+- **`update_ticket_agent({slug, agentId, agentScope?, agentKind?})`** —
+  assigns exactly one agent to an existing ticket.
+- **`update_ticket_run({slug, runId, runSource?, sessionId?, runStartedAt?, runStatus?})`** —
+  links a ticket to the run/session that picked it up.
+- **`update_ticket({slug, status?, priority?, appendPrUrl?, removePrUrl?, agentId?, agentScope?, agentKind?, runId?})`** —
   whitelisted mutation, auto-bumps `updated:`.
 - **`list_tickets({repo?, status?, type?})`** / **`get_ticket({slug})`**.
 - **`set_run_outcome({runId: $TERMINAL_RUN_ID, outcome: 'ticket-filed'})`** —
@@ -25,7 +32,8 @@ installs via Settings), use these instead of reading sections below:
 
 Saves ~7k tokens vs reading SKILL.md + EXAMPLE.md. The thinker work
 (when to file, type/priority judgment, drafting ACs) still belongs to
-you. Shell-helper path below is the fallback when MCP isn't installed.
+you. Shell-helper path below is the fallback when MCP isn't installed; use
+`.claude/bin/list-agents` as the non-MCP fallback for owner-agent selection.
 
 ---
 
@@ -70,9 +78,18 @@ Infer from context; ask once only if genuinely unclear.
 - **Type** — `bug` | `feature` | `security` | `docs` | `dx` | `testing` | `ux` | `performance`.
 - **Priority** — `critical` | `high` | `medium` | `low`. `medium` is a fine default; say so.
 - **Horizon** — `now` | `next` | `future`. Scope/timeline, orthogonal to priority. Default `now`.
-  `/code-review` and `/session-end` follow-ups are usually `future` or `next`.
+  `code-review` agent and `/session-end` follow-ups are usually `future` or `next`.
 - **Source** — `manual`, `audit`, `feedback`, agent name (`code-review`), or a ref.
 - **Refs** (optional) — plan unit IDs (`U10`), ADRs (`ADR-0002`), doc paths.
+- **Agent** — every ticket is assigned to exactly one agent:
+  `agent_id`, `agent_scope` (`repo` | `global`), and `agent_kind`
+  (`classic` | `persistent`). Use `list_agents({repo})` when MCP is available
+  or `.claude/bin/list-agents` otherwise.
+  Default generic implementation work to `1000x-ai-engineer`; route docs,
+  testing, security, performance, and DX/tooling tickets to their matching
+  specialist when the type or content clearly signals that domain.
+  If multiple phases need different agents, file multiple linked tickets and
+  connect them with `depends_on`.
 
 ### 2. Allocate an id
 
@@ -100,6 +117,10 @@ created: <YYYY-MM-DD>
 updated: <YYYY-MM-DD>
 prs: []
 refs: []
+depends_on: []
+agent_id: <agent id>
+agent_scope: <repo|global>
+agent_kind: <classic|persistent>
 ---
 ```
 

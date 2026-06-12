@@ -52,6 +52,12 @@ model="${TERMINAL_MODEL:-haiku}"
 # terminal-cli hitl "<title>" "<action>"
 # terminal-cli activity <kind> "<title>" "<detail>"
 # terminal-cli state get|set <key> [value]
+# terminal-cli mcp list_agents repo="$(basename "$repo")"
+# terminal-cli mcp request_agent_artifact repo="$(basename "$repo")" agentId=knowledge-base title="Question" prompt="..."
+#
+# Portable repo-local fallbacks available in project-template repos:
+# .claude/bin/list-agents
+# .claude/bin/request-agent-artifact --agent knowledge-base --title "Question" -- "Prompt..."
 ```
 
 When calling an engine from inside the script:
@@ -76,6 +82,15 @@ Rules:
 - Never merge to `main`/`master`.
 - Open a PR/MR only when the script creates concrete code changes.
 - Use `terminal-cli ticket` for findings the agent should not fix in the same run.
+- Use `terminal-cli mcp list_agents` or `.claude/bin/list-agents` before filing
+  tickets that need an owner agent.
+- Use `terminal-cli mcp request_agent_artifact` or
+  `.claude/bin/request-agent-artifact` for focused cross-domain knowledge
+  requests. Keep the returned artifact path and a short summary; do not paste
+  long delegated transcripts into the parent prompt.
+- At the end of implementation-style agents, file follow-up tickets for any
+  deferred cross-agent work. Each follow-up gets exactly one `agent_id`,
+  `agent_scope`, and `agent_kind`; multi-phase work becomes linked tickets.
 - Use `terminal-cli hitl` only for true human blockers.
 - Treat HITL as append-only: do not edit `hitl.json` or resolve it from the
   script. After filing, exit only if that lane is blocked; otherwise continue
@@ -93,7 +108,31 @@ Rules:
   "opensPr": false,
   "engine": "claude",
   "model": "haiku",
-  "inPlace": false
+  "modelPolicy": {
+    "default": "haiku",
+    "cheap": "haiku",
+    "deep": "sonnet",
+    "judge": "gpt-5-mini",
+    "allowOverride": true
+  },
+  "inPlace": false,
+  "outputContract": "Human-readable summary plus ticket/PR/artifact links.",
+  "quality": {
+    "acceptanceCriteria": [
+      "The agent completes its declared task or reports why it could not.",
+      "The run ends with checks performed, artifacts produced, and follow-up ticket ids or none."
+    ],
+    "requiredArtifacts": [],
+    "deterministicChecks": [],
+    "judge": {
+      "enabled": false,
+      "mode": "deterministic",
+      "rubric": [
+        "Output matches the agent purpose.",
+        "No unrelated changes were made."
+      ]
+    }
+  }
 }
 ```
 
@@ -106,6 +145,9 @@ report/precheck agents, prefer cheap model defaults (`haiku`,
 default is intentional.
 Set `inPlace: true` only for agents that intentionally mutate the current repo
 without a worktree; most agents should leave it false.
+Set `quality.deterministicChecks` for commands that can verify output
+mechanically. Enable `quality.judge` only when deterministic verification is
+not enough; include a concrete rubric and judge model in `modelPolicy.judge`.
 
 ## Confirmation
 

@@ -1,9 +1,13 @@
 ---
 name: code-review
-description: "Delegate a GitHub/GitLab PR review to Codex: a deterministic preflight does recon, then Codex scores six axes into one artifact at .TerMinal/reviews/<pr>/<sha>.md (v2) or .reviews/<pr>/<sha>.md (legacy v1). Use on /code-review or 'review this PR'."
+description: "Compatibility launcher for the code-review agent. Delegates a GitHub/GitLab PR review to Codex: deterministic preflight does recon, then Codex scores six axes into one artifact at .TerMinal/reviews/<pr>/<sha>.md (v2) or .reviews/<pr>/<sha>.md (legacy v1). Use on /code-review or 'review this PR'."
 ---
 
 # /code-review — PR review with six-axis scoring + embedded tests
+
+This skill is a compatibility command for the `code-review` agent. Workflow
+docs should refer to the agent; this command exists so `/code-review` still
+launches the same reviewer contract.
 
 Produces **one combined artifact** at `.TerMinal/reviews/<pr-number>/<short_sha>.md`
 in v2 repos, or `.reviews/<pr-number>/<short_sha>.md` in legacy v1 repos.

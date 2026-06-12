@@ -149,5 +149,5 @@ Done. Next steps in $DST:
   3. If you had a Claude settings.json, merge settings.workflow.json into it.
   4. Merge .codex/hooks.workflow.json into your active Codex hooks config if you want repo-local Codex completion Inbox items.
   5. Commit the scaffold on a feature branch (never main — global §8).
-  6. Start working: /session-start "<goal>"  →  /ticket  →  /pr-creation  →  /code-review
+  6. Start working: /session-start "<goal>"  →  /ticket  →  /pr-creation  →  code-review agent
 EOF

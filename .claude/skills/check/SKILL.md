@@ -16,7 +16,9 @@ tail of any `/check <kind>` run instead of `terminal-cli state` shell calls:
   at the end — record where we scanned through.
 - **`emit_activity({kind: 'check', title: '<kind> · N findings', repo})`** when
   the run finishes (clean or findings).
-- **`file_ticket(...)`** for any escalations from the run.
+- **`list_agents({repo})`** before filing escalations that need an owner.
+- **`file_ticket(...)`** for any escalations from the run; include exactly one
+  `agentId`, `agentScope`, and `agentKind`.
 - **`file_hitl(...)`** for true blockers.
 
 These replace the equivalent shell calls; the per-kind `.agents/<kind>.md`
@@ -24,7 +26,7 @@ delegation pattern below is unchanged.
 
 ---
 
-Where `/code-review` gates a single PR, `/check` runs a **repo-level agent** on
+Where the `code-review` agent gates a single PR, `/check` runs a **repo-level agent** on
 the whole tree at `main` HEAD — the cadence work (drift audit, coverage
 backfill, dependency hygiene, changelog maintenance, auto-docs, perf
 benchmarks, dead-code) that's noise if run per-commit. Each agent is defined
@@ -200,7 +202,7 @@ touch "$lock"
 
 ## What this is NOT
 
-- **Not a per-PR review.** Use `/code-review` for that.
+- **Not a per-PR review.** Use the `code-review` agent for that.
 - **Not a scheduler.** TerMinal's Schedules tab + launchd own scheduling; this
   skill just runs the agent and writes the artifact.
 - **Not a writer for arbitrary paths.** Writer-mode agents are scoped to their

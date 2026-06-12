@@ -50,6 +50,7 @@ If the failure is genuinely outside the fix budget of those four classes,
         ▼
    5. File a follow-up ticket
         │  type: testing | ci | dependency  ·  priority: high
+        │  assign exactly one owner agent via list_agents
         ▼
    6. Hand off with the action taken + new main SHA + ticket id
 ```

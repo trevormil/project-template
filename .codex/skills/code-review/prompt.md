@@ -8,6 +8,11 @@ Follow .agents/code-review.md for the scoring rubric + artifact format. Score th
 
 Compose findings with copy-pasteable fix prompts in the body. After writing the artifact, emit a fenced ```findings-new ... ``` block containing the FRESH scan findings as a flat JSON array — the harness helper merges this with the prior findings.json deterministically (handles ids, first_seen_sha, auto-resolved transitions). Do NOT compute verdict or merge_ready yourself — the verdict helper will compute those from the scorecard + findings + test_status.
 
-If real work falls out of scope (latent bugs, refactors, missing tests), file backlog tickets via `terminal-cli mcp file_ticket repo={{REPO_BASENAME}} title='...' type=...` and reference the slug in Suggestions.
+If real work falls out of scope (latent bugs, refactors, missing tests), first use
+`terminal-cli mcp list_agents repo={{REPO_BASENAME}}` to choose exactly one owner,
+then file backlog tickets via `terminal-cli mcp file_ticket repo={{REPO_BASENAME}}
+title='...' type=... agentId=... agentScope=... agentKind=...` and reference the
+slug in Suggestions. If a finding needs multiple agents/phases, file multiple
+linked tickets instead of one broad ticket.
 
 The shell sandbox is danger-full-access — the test gate may bind loopback ports or write /tmp.

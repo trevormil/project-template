@@ -94,7 +94,7 @@ Scan this session's diff for quality issues (the anti-slop checklist in
 names, WHAT-comments, unnecessary error handling. Fix small/local ones now;
 for anything larger than a quick cleanup, file a refactor `/ticket` rather than
 expanding scope at session end. If open PRs from this session haven't been
-reviewed, recommend running `/code-review` on them (background — it's the
+reviewed, recommend running the `code-review` agent on them (background — it's the
 dev-speed bottleneck; ~4 min).
 
 ### 6. Consistency check (architecture + conventions)
@@ -134,8 +134,11 @@ in flight. Note any status changes in the session doc's Outcomes / Follow-ups.
 ### 8. Suggest new tickets
 
 For every follow-up, discovered bug, deferred item, or refactor: file a
-`/ticket` (present them **one at a time** and confirm — don't batch-dump). Record
-the resulting ids under the session doc's **Follow-ups**.
+`/ticket` (present them **one at a time** and confirm — don't batch-dump).
+Before filing, run `.claude/bin/list-agents` or MCP `list_agents({repo})` and
+assign exactly one owner (`agent_id`, `agent_scope`, `agent_kind`). If a
+follow-up needs multiple agents/phases, split it into linked tickets with
+`depends_on`. Record the resulting ids under the session doc's **Follow-ups**.
 
 ### 9. Capture documentation (most important)
 

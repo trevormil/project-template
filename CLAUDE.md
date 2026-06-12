@@ -19,7 +19,7 @@ don't trust your internal clock, nothing is static) applies. The loop:
    feature branch         →  off main (or off prior PR in a stack)
    implement TDD-first    →  failing test → code → green
    /pr-creation           →  push + open PR, link into ticket
-   /code-review           →  Codex review to passing bar (background)
+   code-review agent      →  review to passing bar (background)
    <human merges>         →  merge to main is HUMAN-ONLY (global §8)
 /session-end              →  document, clean up, file follow-ups, close
 ```
@@ -39,7 +39,7 @@ Test-first per global §4. Two enforcement points:
 
 Enforced mechanically: `/session-start` seeds "write failing test for X"
 before "implement X"; `/pr-creation` refuses repos with no test suite;
-`/code-review` runs the suite as a hard gate; `/session-end` files a
+The `code-review` agent runs the suite as a hard gate; `/session-end` files a
 testing ticket for any new behavior without a test.
 
 ## [3] Sessions are central state
@@ -62,6 +62,21 @@ needs-you events). Feeds the TerMinal sidebar (`/terminal-widget`).
 List with `.claude/skills/ticket/bin/tickets [status] [priority] [horizon]`.
 Prose lives **after** the closing `---`, never inside frontmatter.
 
+Every ticket is assigned to exactly one agent via frontmatter:
+`agent_id`, `agent_scope` (`repo` | `global`), and `agent_kind`
+(`classic` | `persistent`). If work needs multiple agents/phases, split it
+into multiple tickets and link them with `depends_on`.
+
+For complex full-stack or high-risk tickets, add a short staged
+implementation plan in the ticket body or session doc before editing. Keep it
+lightweight: name each stage, its dependencies, the verification command or
+check, and any human approval gate (for example before destructive migrations).
+Do not build a separate orchestration system unless the written plan stops
+being enough.
+
+The end-to-end owner, knowledge-gathering, delegated-artifact, and follow-up
+contract lives in [`docs/workflow/agent-process.md`](./docs/workflow/agent-process.md).
+
 ### [4.1] Status lifecycle (gap-free)
 
 `open` → `in-progress` → `closed`, with `stuck` / `icebox` off-ramps.
@@ -80,7 +95,7 @@ drift; `/merge-sync` runs the same sweep standalone. Goal:
 `bin/tickets in-progress` always matches reality.
 
 The **`horizon`** tag (`now` | `next` | `future`) is orthogonal to
-priority — `/code-review` and `/session-end` park out-of-scope ideas as
+priority — the `code-review` agent and `/session-end` park out-of-scope ideas as
 `future`.
 
 ### [4.2] Inboxes — reaching the human & queuing automation
@@ -122,7 +137,7 @@ human-only.
 
 ## [6] Code review & checks
 
-`/code-review` delegates to Codex, writes one combined review+tests artifact at
+The `code-review` agent writes one combined review+tests artifact at
 `.TerMinal/reviews/<pr>/<sha>.md` (+ `findings.json` / `suggestions.json`;
 legacy v1: `.reviews/<pr>/<sha>.md`). Contract:
 [`.agents/code-review.md`](./.agents/code-review.md).
@@ -132,7 +147,7 @@ legacy v1: `.reviews/<pr>/<sha>.md`). Contract:
 - **Run in background** — review is ~4 min; fire async, do other work.
   Reviewer files out-of-scope items as `horizon: future` tickets.
 - **`/stacked-mr` batches review** — no per-PR review while building;
-  one end-of-stack pass fans out `/code-review` per PR in parallel
+  one end-of-stack pass fans out the `code-review` agent per PR in parallel
   (each in its own worktree). See the contract's "Batch stacked-MR
   review" section.
 
@@ -148,7 +163,9 @@ becomes a ticket.
 Sidecar `.md` under `docs/` (global §7): `decisions/` (append-only ADRs),
 `architecture.md` (evergreen, edit-in-place), `runbooks/`, `learnings/`.
 Capture with `/document`, rot-check with `/document-audit`. `/session-end`
-is the main moment things get written.
+is the main moment things get written. For implementation-time knowledge
+gathering and delegated artifacts, follow
+[`docs/workflow/agent-process.md`](./docs/workflow/agent-process.md).
 
 ## [8] Doc anchoring
 
@@ -191,6 +208,22 @@ blockers and **never merge to main**. Mechanics live in each skill body
 
 <!-- Domain context, substrate, external services, runbooks,
      "don't re-derive" facts. Subsections [12.1], [12.2], … as needed. -->
+
+### [12.1] Sensitive surfaces
+
+<!-- Fill this in for regulated or security-sensitive projects. Keep it
+     concrete to this repo rather than restating generic security advice. -->
+
+For auth, billing, health/customer data, credentials, external integrations, or
+migrations, record the repo-specific checks here. Examples:
+
+- Authn/authz path matches the existing project pattern.
+- Permission checks are covered by tests.
+- Sensitive values are never logged, committed, or exposed in artifacts.
+- Audit/event logging is preserved where the product requires traceability.
+- Migrations are backward-compatible and non-destructive unless explicitly
+  approved.
+- External credentials use the existing secret manager/client pattern.
 
 ## [13] Activity feed
 

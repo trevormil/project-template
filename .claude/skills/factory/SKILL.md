@@ -1,216 +1,110 @@
 ---
 name: factory
-description: "Continuous autonomous orchestrator — the no-handoff loop around /stacked-mr: reconcile (/merge-sync), build+batch-review a stack to the bar, optionally refill via discovery, repeat. Parks HITL, never merges to main. Use on /factory or 'work the backlog autonomously / continuously'."
+description: "Continuous autonomous orchestrator: reconcile, route tickets by owner agent, run stacked PR/MR passes, optionally discover/refill, park HITL, never merge. Use on /factory or 'work the backlog autonomously'."
 ---
 
-# /factory — continuous autonomous orchestrator
+# /factory — Continuous Orchestrator
 
-The perpetual loop. `/stacked-mr` is the **primitive**: build a stack of PRs,
-batch-review them to the bar, fix/re-review until the runnable lane is exhausted.
-`/factory` is the **loop around it**: reconcile, run a stacked-mr pass,
-(optionally) refill the queue, compact or migrate context, repeat — parking HITL
-on anything that needs a human while continuing every independent lane.
+`/factory` is the loop around `/stacked-mr`; it does not invent a separate
+build/review bar. It keeps moving while runnable work remains, parks true human
+blockers in HITL, and leaves merging to the human.
 
-Core contract: **zero handoffs while runnable work remains.** Do not stop with
-"tell me when you're ready" language. Continue until the user explicitly stops
-you, the requested goal is actually complete, or every remaining in-scope lane is
-blocked on human-only action that has already been filed to HITL.
+The canonical owner, knowledge, delegated-artifact, and follow-up contract is
+[`docs/workflow/agent-process.md`](../../../docs/workflow/agent-process.md).
+Factory treats classic agents, repo/global scripts, and persistent agents as
+one assignable inventory. Ticket ownership is always the
+`agent_id` + `agent_scope` + `agent_kind` tuple; model policy, quality gates,
+and output judges live on the selected agent definition and should not be
+reimplemented in this skill.
 
-It **reuses** every skill — especially `/stacked-mr` (the build + batch-review
-engine), `/merge-sync` (reconcile), the discovery agents (refill), and `/notify`
-(AFK). It adds **no new build/review logic and no new quality gate** — the bar lives
-in `/stacked-mr`. Output is reviewed, merge-ready stacks; **the human merges**
-(global §8, hook-enforced).
+## MCP Fast Path
 
-## [1] Invocation
+Use MCP for deterministic orchestration state when available:
 
-```
-/factory                      # loop the now/next backlog until it's dry
-/factory "vault + payments"   # scope to a goal (passed through to each pass)
-/factory --discover           # when the queue empties, refill from discovery agents
-/factory --max-stack 12       # cap each stacked-mr pass's depth (default: stacked-mr's default)
-```
+- `list_tickets({repo, status})` / `get_ticket({slug})`
+- `list_agents({repo})`
+- `update_ticket_agent({slug, agentId, agentScope, agentKind})`
+- `update_ticket({slug, status: 'in-progress'})`
+- `update_ticket_run({slug, runId: $TERMINAL_RUN_ID, runSource: 'agent', runStartedAt, runStatus: 'running'})` when a run id exists
+- `request_agent_artifact({repo, title, prompt, agentId, agentScope, agentKind})`
+- `file_ticket({repo, title, body, type, priority, source, agentId, agentScope, agentKind})`
+- `emit_activity({kind, repo, title, detail})`
 
-AFK mode: **arm `/notify`** at kickoff; ping at each pass boundary and on every
-HITL/blocker/final state.
+Fallback command helpers: `.claude/bin/list-agents` and
+`.claude/bin/request-agent-artifact`.
 
-## [2] The loop
+## Invocation
 
-```
-   ┌─► /merge-sync (reconcile)
-   │        │
-   │        ▼
-   │   /stacked-mr pass  (build the stack → batch-review to the bar → handle verdicts)
-   │        │
-   │        ▼
-   │   runnable in-scope queue empty?
-   │     ├─ no  ──────────────────────────────► loop
-   │     └─ yes → --discover? ─ yes → file work ─► loop
-   │                          └ no ────────────► final state ([6])
-   └────────────────────────────────────────────┘
+```text
+/factory
+/factory "payments + auth"
+/factory --discover
+/factory --max-stack 12
 ```
 
-1. **Reconcile.** Run `/merge-sync` so the backlog is truthful — closes any PRs the
-   human merged since the last pass and fixes status drift (CLAUDE.md [4.1]).
-   Include stale blocker drift: for `stuck` tickets in scope, query the related
-   HITL/dependency status or re-check the original blocker. When the blocker is
-   clear, immediately update the ticket to `open` (or `in-progress` if this pass
-   is resuming it) before selecting work.
-2. **Run a `/stacked-mr` pass** over the in-scope queue. That skill owns the
-   mechanics: build the stack (each branch off the prior tip, no per-PR review),
-   then one batch review of all PRs to the bar, then handle verdicts (fix +
-   restack). `/factory` does not duplicate any of this.
-3. **Refill or continue.** If the runnable in-scope queue is now empty: with
-   `--discover`, run the discovery agents to file new tickets ([5]) and loop;
-   without it, summarize the final state ([6]). If any runnable ticket remains,
-   loop. If one lane is blocked, file HITL for that lane and continue another.
+## Loop
 
-Across passes the stack keeps growing on the prior (unmerged) tip — the human
-typically merges at the end, so reconcile mostly matters at the start of a run and
-whenever the human merges mid-run.
-
-## [2.5] Context hygiene — `/compact` aggressively at pass boundaries
-
-A continuous loop is the *highest-bloat* surface in this workflow: each pass
-accumulates `/merge-sync` output, `/stacked-mr` build logs, per-PR diffs, test
-output, and N review verdicts. After ~2–3 passes the context is dominated by
-stale tool results that no future step will read.
-
-**Rule:** state of record lives on disk — `.TerMinal/backlog/`, in-repo
-`.TerMinal/reviews/`, the ledger (`.TerMinal/sessions/<id>/stacked-mr.md`),
-and the forge — so the conversation does *not* need to hold any of it. Legacy
-v1 repos may still use `backlog/`, `.reviews/`, and `sessions/`. Compact
-aggressively; re-read from disk on demand.
-
-Checkpoints — at each of these, run `/compact` (or summarize-and-purge) before
-proceeding:
-
-1. **End of every loop iteration**, before the next `/merge-sync` — the only
-   thing the next iteration needs is "which tickets remain in scope," which is
-   on disk.
-2. **After `/merge-sync` returns**, before kicking off `/stacked-mr` — keep the
-   short reconcile summary, drop the per-ticket diffs it printed.
-3. **After filing a HITL item** — once `.claude/bin/hitl` has logged it, the
-   conversation context around that decision is no longer load-bearing.
-4. **Before discovery** (`--discover`) — discovery agents fan out fresh; they
-   don't benefit from prior-iteration churn.
-
-Prefer **out-of-process delegation** for heavy steps so their output never
-enters the orchestrator's context in the first place: `/code-review` already
-runs in a `codex exec` subprocess (the artifact is on disk; only the verdict
-needs to come back), and each batch review runs in its own worktree. When
-spawning sub-agents, ask them for a structured summary, not a transcript.
-
-## [2.6] Orchestrator pattern — the factory agent stays thin
-
-**The main `/factory` agent is a coordinator, not a worker.** It knows the
-*state* of the work — which tickets are in scope, which PRs are stacked, which
-verdicts are in — but it never holds the *content* of any individual step (a
-file's diff, a review body, a test log). Anything heavy is delegated to one of
-the patterns below; the orchestrator gets back a small, structured result and
-re-reads from disk on demand.
-
-Pick the delegation pattern by the shape of the work:
-
-| Pattern | When to reach for it | Tradeoffs |
-|---|---|---|
-| **In-process subagent** (Claude Code Task / Agent tool) | Single-shot research, audit, multi-file scan, "find me X across the codebase" — work that needs Claude's tools + skills but no long edit loop. Parallel fan-out across N items. | + Easy invocation, parallelizable, shares the parent's model session. − The *return value* still consumes parent context — keep the schema/summary tight. − Stateless: brief it like a fresh colleague; the prompt **is** its memory. |
-| **`codex exec` subprocess** (Bash) | Code review, test runs, deterministic-output passes. Anything where you want adversarial-different-model eyes + an on-disk artifact. | + Fully isolated context — parent only sees stdout. + Different model family (useful for adversarial review). + Artifact persists to disk = natural memory. − Cold start, slower per call. − Separate auth/billing. − Limited to codex's toolset. |
-| **`claude -p` subprocess** (Bash) | A focused implementation/refactor step you want isolated from the orchestrator but still in Claude's hands. One-shot, no UI. | + Out-of-process, no parent bloat. + Same model family as parent (consistent behavior). − Separate session — uses your Claude credits independently. − One-shot: no multi-turn refinement. |
-| **Spawn a session in a worktree** (TerMinal's Agents/Factory tabs; or `git worktree add` + a fresh `claude` session) | A full ticket-to-PR loop that needs many turns (TDD, fix cycles, commit + push). The heavyweight option — use when the work genuinely needs a sustained loop. | + Maximum isolation; visible + cancellable in the Agents tab. + Persists across many turns; can iterate. − Heavyweight to spin up; needs cleanup. − Each adds an active session to manage. |
-
-**Briefing rule — feed in enough memory, no more.** Treat each delegated step
-as a fresh colleague who knows nothing about this run. Hand over: (a) the
-ticket id(s) and one-line goal, (b) the parent branch / base SHA, (c) the
-specific files or paths that matter, (d) the `CLAUDE.md` slice(s) relevant to
-*this* step (not the whole file), (e) explicit, verifiable success criteria.
-**Let the delegate re-read the rest from disk** — don't pre-load it, that just
-moves the bloat from the orchestrator into the subagent's prompt.
-
-Anti-patterns:
-
-- Returning a full diff / full review / full test log to the orchestrator.
-  Return the verdict + an artifact path; the orchestrator can re-read iff
-  needed.
-- Pre-loading a giant context "just in case." If the delegate doesn't need it
-  to satisfy the success criteria, leave it on disk.
-- Choosing a Task subagent for work that runs many turns. Use a subprocess or
-  a real worktree session instead — Task summaries get expensive fast.
-
-## [3] What `/factory` adds vs `/stacked-mr` (and what it does NOT)
-
-| | `/stacked-mr` | `/factory` |
-|---|---|---|
-| Build + batch-review to the bar | ✅ (owns it) | reuses it |
-| Run shape | one stack over the runnable queue | continuous loop |
-| Reconcile first (`/merge-sync`) | — | ✅ each iteration |
-| Refill the queue | — | ✅ optional (`--discover`) |
-| Quality bar | defines it | unchanged — never altered |
-| Merge to main | never | never |
-
-`/factory` is **purely orchestration** — a loop + reconcile + refill + HITL. It adds
-no new way to build or review, and never changes the bar.
-
-## [4] HITL — park and continue
-
-When a pass surfaces something a human must decide — ambiguous spec, design fork, a
-destructive/cost-bearing action, a PR that can't reach the bar after stacked-mr's
-fix cycles, or a dependency on a human-only action (approve a merge, provision
-creds, an OAuth/browser flow) — raise it to the **global HITL inbox** with
-`.claude/bin/hitl "<title>" "<action needed>"` (CLAUDE.md [4.2]; this pings the
-operator), then continue independent work; pause only if nothing else can proceed.
-The human resolves it from the Inbox; later loops pick it up once unblocked by
-querying HITL status or re-checking the original blocker. When it is unblocked,
-clear stale ticket state immediately: move `status: stuck` back to `open`, or to
-`in-progress` if resuming it in the current pass, and emit/log the status change.
-Do **not** raise HITL for review `request-changes` — that's the iterative loop's
-job.
-
-## [5] Discovery (optional — `--discover`)
-
-When the in-scope queue empties, refill it when requested: run the discovery
-agents (deep-audit / security-sweep / `/check` kinds) to file new `open` tickets,
-then loop. **Off by default** — `/factory` does not invent infinite scope; without
-`--discover` it drains the existing backlog, summarizes the final state, and exits
-only because there is no runnable in-scope work left.
-
-## [6] Final State, Not Handoff
-
-Use `/stacked-mr`'s stack summary (PRs in dependency order with verdict, tests, and
-any `stuck`/HITL flags), plus a one-line factory tally (passes run, total PRs at the
-bar vs stuck). The human merges bottom-up; `/merge-sync` reconciles; capture
-learnings via `/document`; close with `/session-end` only when there is no
-runnable work left. This is a state report, not a request for permission to keep
-going.
-
-## Hard rules
-
-1. **Never merge to main/master** (global §8, hook-enforced) — the human gate is the
-   point of the factory.
-2. **Never change the review bar** — `/stacked-mr` owns it; `/factory` only runs more
-   passes.
-3. **Destructive / cost-bearing actions → HITL,** never autonomous.
-4. **Reuse, don't reimplement** — `/factory` calls `/stacked-mr`, `/merge-sync`,
-   discovery, `/notify`; it never duplicates build/review logic.
-5. **Emit activity + `/notify`** at pass boundaries and on HITL/blockers so the run
-   is observable live.
-6. **No handoff while runnable work remains.** Compact, spawn a new phase, or move
-   to another independent ticket, but keep the loop moving.
-
-## What this is NOT
-
-- **Not a build/review engine** — it's the loop *around* `/stacked-mr`.
-- **Not a merge bot** — humans merge.
-- **Not a bar-skipper** — the gate is `/stacked-mr`'s and is absolute.
-- **Not a scope inventor** — without `--discover` it only works existing tickets.
-- **Not budgeted** — there is no token/cost cap; the run is bounded by the
-  requested scope, the runnable backlog, and explicit user stop.
-
-## Activity
-
-```bash
-.claude/bin/activity info "Factory started · <scope>" "looping the backlog"
-# each pass: /stacked-mr emits pr-opened + review verdicts per PR
-.claude/bin/hitl "Factory blocked · <title>" "<action needed / options>"   # true human-needs → global inbox
-.claude/bin/activity task-complete "Factory done · <P> passes · <N> PRs" "<X at bar, Y stuck>"
+```text
+/merge-sync
+  -> select runnable owner lane
+  -> mark in-progress and link pickup run/session when available
+  -> /stacked-mr pass
+  -> handle stuck/HITL lanes
+  -> if queue empty and --discover, run discovery/check agents
+  -> repeat until no runnable scoped work remains
 ```
+
+## Responsibilities
+
+| Step | Factory responsibility |
+|---|---|
+| Reconcile | Run `/merge-sync`; clear stale `stuck` tickets when blockers are gone. |
+| Route | Group work by `agent_id` / `agent_scope` / `agent_kind` across classic and persistent agents; split multi-agent work into linked tickets. |
+| Observe | At pickup, set `in-progress` and write `agent_run_*` fields with `update_ticket_run` when a run id is available. |
+| Build/review | Call `/stacked-mr`; do not duplicate its implementation or review logic. The review checkpoint is the `code-review` agent, with `/code-review` only as a compatibility launcher. `/stacked-mr` also yields one joint `/digest` over the batch (its Phase 2.5) — the human's read surface; do not gate on it. |
+| Discovery | When `--discover` is enabled, run discovery/check agents and file owner-scoped tickets. |
+| HITL | File true human blockers, then continue independent lanes. |
+| Context | Compact at pass boundaries; state of record lives on disk. |
+
+## Delegation
+
+Factory stays thin. Use these patterns:
+
+| Pattern | Use for |
+|---|---|
+| `request_agent_artifact` | Focused cross-domain knowledge questions with durable reports. |
+| `list_agents` | Resolve assignable classic and persistent owner agents. |
+| `code-review` agent | Review/test artifacts. `/code-review` remains a compatibility launcher. |
+| `/stacked-mr` | Full build stack. |
+| Fresh worktree/session | Long-running owner lane that needs isolation. |
+
+Keep only summaries and artifact paths in factory context.
+
+## Discovery
+
+Discovery is off unless `--discover` is passed. When enabled:
+
+1. Run the relevant discovery/check agents.
+2. Use `list_agents({repo})` or `.claude/bin/list-agents`.
+3. File every finding as a ticket with exactly one owner and a concrete quality/eval expectation.
+4. Split multi-phase or multi-owner findings into linked tickets with `depends_on`.
+5. Loop back to `/merge-sync`.
+
+## Final State
+
+Report state, not a handoff request:
+
+- passes run
+- PR/MR stack in merge order
+- tickets at the bar
+- stuck/HITL lanes
+- follow-up/discovery tickets filed
+
+## Hard Rules
+
+1. Never merge.
+2. Never alter `/stacked-mr`'s review bar.
+3. Never create ownerless tickets.
+4. True human-only decisions go to HITL; review failures iterate.
+5. No "tell me when ready" while runnable scoped work remains.
+6. Do not hardcode persona names or `/code-review`; route through agent definitions.

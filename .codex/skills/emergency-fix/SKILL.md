@@ -8,7 +8,7 @@ description: "FORCE-MODE hotfix: smallest patch → commit → push DIRECTLY to 
 `/emergency-fix` is the one and only skill that intentionally bypasses the
 human-merge gate on `main`/`master`. It is for **production-impacting** bugs
 that are hurting real users RIGHT NOW. Every other change goes through
-`/pr-creation` → `/code-review` → human merge.
+`/pr-creation` → `code-review` agent → human merge.
 
 ## [1] Authority
 
@@ -72,6 +72,8 @@ tool — use `/pr-creation` instead.
 
 - **Title:** "Proper fix: <brief restatement of root cause>"
 - **type:** bug / **priority:** high / **source:** emergency-fix
+- **owner:** exactly one assigned agent (`agent_id`, `agent_scope`,
+  `agent_kind`) selected with `list_agents`
 - **Body must include:**
   - The SHA pushed to main as the emergency patch
   - Why the patch is a stopgap (what it papered over vs what's still broken)

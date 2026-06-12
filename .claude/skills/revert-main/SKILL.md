@@ -43,6 +43,7 @@ Refuse and surface a human-readable reason if:
    5. File a follow-up ticket
         │  title: "Re-do reverted: <original subject>"
         │  type: bug  ·  priority: high  ·  source: revert-main
+        │  assign exactly one owner agent via list_agents
         │  body must include: reverted SHA, reason, fix prompt for /factory
         ▼
    6. Hand off with reverted SHA + new main SHA + ticket id

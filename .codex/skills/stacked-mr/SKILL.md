@@ -1,188 +1,77 @@
 ---
 name: stacked-mr
-description: "Autonomous AFK mode: build a STACK of PRs (each off the prior tip, TDD per ticket, no per-PR review), then one batch review pass fanning out /code-review per PR to the bar. Human merges. Use on /stacked-mr or 'stack PRs'."
+description: "Autonomous AFK mode: build a stack of owner-scoped PRs/MRs, then batch-review them to the bar. Human merges. Use on /stacked-mr or 'stack PRs'."
 ---
 
-# /stacked-mr — Autonomous overnight PR stacking
+# /stacked-mr — Stacked PR/MR Pass
 
-A long-running AFK mode. Branch N+1 is cut from branch N's tip; work keeps
-flowing without merging to `main`. Keep moving until the in-scope queue is
-exhausted, the user explicitly stops you, or every remaining lane is truly
-blocked on human-only action. The human reviews and merges bottom-up (global §8).
+Builds a stack of PRs/MRs without reviewing each one immediately, then runs a
+batch review pass at the end. The canonical owner, knowledge, artifact, and
+follow-up contract is
+[`docs/workflow/agent-process.md`](../../../docs/workflow/agent-process.md).
 
-**Review is batched, not per-PR.** Build the whole in-scope stack without
-firing reviews, then run **one batch pass** that fans out `/code-review`
-per PR concurrently, each in its own worktree. Two reasons:
+## Stack Shape
 
-- **Speed.** Serial: ~4 min × N PRs. Batched: ~4 min total.
-- **No review-vs-build contention.** A review inspects/tests a checkout;
-  running one while the builder is editing the same repo contaminates
-  results.
-
-Forge-agnostic: this doc says "PR" / `gh`, but stacking is identical on
-GitLab — `glab mr create --target-branch <parent>`. Resolve with
-`.claude/bin/forge`; mapping in
-[`.agents/forge.md`](../../../.agents/forge.md).
-
-## Invocation
-
-```
-/stacked-mr "work the vault + payment tickets"  # scoped to a goal
-/stacked-mr                                      # work now/next backlog by priority
-```
-
-AFK mode: arm Telegram (`/notify`) at kickoff; ping at checkpoints.
-
-## The stacking model
-
-```
+```text
 main
- └─ 0012-vault-create        (PR #1, base: main)
-     └─ 0013-vault-spend     (PR #2, base: 0012-vault-create)
-         └─ 0014-payment-link (PR #3, base: 0013-vault-spend)
+  -> 0012-first-ticket       PR #1 base: main
+       -> 0013-second-ticket PR #2 base: 0012-first-ticket
+            -> 0014-third    PR #3 base: 0013-second-ticket
 ```
 
-Each PR's **base** is its parent branch, so each diff is just that PR's
-delta. `gh pr create --base <parent-branch>` sets this. `/code-review`
-resolves base from the PR, so each end-of-stack review sees only the
-owning PR's incremental slice.
+Each PR/MR diff is against its parent branch. The human merges bottom-up.
 
-## Phase 1 — Build the stack (no reviews)
+## Phase 1 — Build Stack
 
-Work the queue ticket-by-ticket. **Do not run `/code-review`** —
-deferred to Phase 2.
+For each runnable ticket:
 
-1. **Pick the next ticket** — from the goal, else backlog by horizon
-   (`now`, then `next`) and priority. Skip `future` unless told. Set
-   `status: in-progress`. If a candidate is `stuck`, re-check its HITL,
-   dependency, or original blocker first; when clear, update it to
-   `in-progress` before starting, otherwise leave it `stuck` and pick another
-   runnable ticket.
-2. **Cut from the current tip:**
-   ```bash
-   parent="<previous branch, or origin/main for first>"
-   branch="<id>-<slug>"
-   git switch -c "$branch" "$parent"
-   ```
-3. **TDD-first** — failing test → code → green. Commit incrementally.
-4. **Sanity + push** — type-check/build, eyeball the diff,
-   `git push -u origin "$branch"`.
-5. **Open the PR** with `--base "$parent"`:
-   ```bash
-   gh pr create --base "$parent" --title "<title>" --body "<summary + stack position>"
-   ```
-   Body notes "Stacked on #<parent-PR>. Part N of <goal> stack." Link
-   the PR url into the ticket's `prs:`.
-6. **No review here.** Ping `/notify` if useful, update the ledger, go
-   to the next ticket.
-7. **Immediately start next** — branch from this PR's tip.
+1. Pick the next `now` / `next` ticket by priority within the requested scope.
+2. Confirm exactly one owner agent. If work needs multiple owners, split into
+   linked tickets before building.
+3. Set status `in-progress`.
+4. Run the knowledge phase from `docs/workflow/agent-process.md`.
+5. Branch from the current stack tip.
+6. Implement TDD-first and commit.
+7. File owner-scoped follow-up tickets for deferred work.
+8. Run local smoke checks and inspect the diff.
+9. Push the feature branch.
+10. Open a PR/MR with base set to the parent branch.
+11. Link the PR/MR URL into the ticket and update the stack ledger.
 
-Keep a running ledger (active session doc) of PR / branch / parent /
-ticket. Refresh `.claude/bin/status > .status.md` after each slice so a
-human checking in overnight sees current progress.
+Do not run the `code-review` agent during this phase except for explicit
+trust-critical escape hatches.
 
-> **Escape hatch:** for trust-critical PRs mid-stack (auth, money,
-> migrations) you *may* review immediately. Default is defer-and-batch.
+## Phase 2 — Batch Review
 
-## Context hygiene — `/compact` at checkpoints
-
-Stacked-mr accumulates per-ticket TDD output + diffs + N review verdicts
-fast. Ledger + `.status.md` are on disk; the conversation should never be
-the source of truth.
-
-Compact at:
-1. Every ~3–5 tickets inside Phase 1.
-2. The Phase 1 → Phase 2 boundary (build done; diffs no longer needed).
-3. After collecting batch verdicts, before handling them (verdicts in
-   `.TerMinal/reviews/<pr>/`, or `.reviews/<pr>/` in legacy v1; keep just per-PR summary + counts).
-4. After each fix + re-review.
-
-Prefer out-of-process delegation: each `/code-review` runs in its own
-worktree under `codex exec`; verdict comes back, not the transcript.
-See `/factory` skill's `[2.6] Orchestrator pattern`.
-
-## Phase 2 — Batch-review the stack
-
-When build phase ends:
-
-1. **Refresh forge state once** so each review resolves the right head
-   SHA + base. Build the review list from the ledger.
-2. **Fan out one `/code-review` per PR, in parallel, each in its own
-   worktree** (concurrent reviews in the same tree corrupt git state):
-   ```bash
-   wt="${WORKTREES_DIR:-$HOME/.worktrees}/<repo>/<branch>"
-   git worktree add "$wt" "<branch>"
-   ( cd "$wt" && /code-review for this PR in the background ) &
-   ```
-   Each is a normal single-PR review — its own base, delta, artifact,
-   `findings.json` / `suggestions.json`. "Batch" = orchestration firing
-   N at once, not a combined format.
-3. **Collect verdicts** into the ledger as they land.
-4. **Clean up worktrees** (`git worktree remove "$wt"`) or leave for
-   fix-iteration.
-
-See [`.agents/code-review.md`](../../../.agents/code-review.md) →
-"Batch stacked-MR review".
-
-## Handling verdicts
-
-- **approve + tests pass + 0 medium+** → that PR hit the bar.
-- **request-changes / blocked** → apply fix prompts to **that PR's
-  branch** (not the stack tip), push, **re-review just that PR**. Then
-  **restack children** — any branches cut from the fixed branch must
-  rebase onto its new tip:
-  ```bash
-  git rebase --onto <fixed-branch> <old-parent-tip> <child-branch>
-  git push --force-with-lease origin <child-branch>
-  ```
-  `--force-with-lease` to a **feature** branch is allowed; never
-  main/master. If a bottom-of-stack fix restacks many children,
-  re-review the affected sub-chain as a small second batch.
+1. Refresh forge state for every PR/MR in the ledger.
+2. Run one `code-review` agent pass per PR/MR in isolated worktrees.
+3. Collect verdicts and review artifacts.
+4. Fix `request-changes` branches, re-review only affected PRs/MRs, and restack
+   children with `--force-with-lease` to feature branches only.
 
 ## Continue Conditions
 
-- In-scope backlog exhausted → run the batch review/fix phase, then summarize
-  the final stack.
-- True blocker needing a human decision → file HITL with the exact action/options,
-  pick a defensible default if safe, and continue another independent ticket.
-- User explicitly says stop → stop.
-- A PR can't reach passing after reasonable cycles → mark that ticket `stuck`,
-  note why, and move on to independent work.
+- Runnable scoped tickets remain: keep building.
+- True human-only blocker: file HITL and continue another lane.
+- PR/MR cannot reach the bar after reasonable cycles: mark the ticket `stuck`
+  with the artifact path and continue independent work.
+- Scoped backlog exhausted: finish batch review and summarize.
 
-Do not stop with "tell me when you're ready" language while runnable work remains.
-Compact or migrate context at phase boundaries, but keep the stack moving.
+## Summary Format
 
-## Stack Summary
-
-Produce a stack summary in dependency order:
-
-```
-Stack of N PRs (review bottom-up):
-  #1  0012-vault-create   base:main             approve  ✅ tests 9/9
-  #2  0013-vault-spend    base:0012-vault-create approve  ✅ tests 12/12
-  #3  0014-payment-link   base:0013-vault-spend  request-changes (1 medium) ⚠
+```text
+Stack of N PRs/MRs, merge bottom-up:
+  #1  0012-first-ticket   base: main              approve / tests pass
+  #2  0013-second-ticket  base: 0012-first-ticket request-changes
 ```
 
-Include PR url, ticket id, base, latest verdict. Flag `stuck` tickets
-and PRs still pending. **After the human merges the batch, run
-`/merge-sync`** to close merged tickets and scrub urls.
+Include PR/MR URLs, ticket ids, owners, bases, verdicts, test status, HITL
+items, delegated artifact paths, and follow-up tickets.
 
-## Hard rules
+## Hard Rules
 
-1. **Never merge.** No `gh pr merge`, ever (global §8, hook-enforced).
-2. **Every PR gets reviewed to the bar** — enforced via end-of-stack
-   batch, not per-PR during build. "Stacked" ≠ "unreviewed."
-3. **Force-push only to feature branches**, only for restacking, only
-   with `--force-with-lease`.
-4. **TDD-first** every ticket.
-5. **Batch reviews in isolated worktrees**, one per PR.
-
-## Activity
-
-Stacked PRs emit `pr-opened` (via `/pr-creation`) + `pr-verdict` (via
-batch `/code-review`). Stack-level:
-
-```bash
-.claude/bin/hitl "Stack blocked · <why>" "<action / options>"
-.claude/bin/activity task-complete "Stack complete · <N> PRs" "<X approve, Y rc>"
-```
+1. Never merge.
+2. Every PR/MR reaches the review bar before final handoff.
+3. Force-push only feature branches and only with `--force-with-lease`.
+4. TDD-first for every implementation ticket.
+5. Batch reviews run in isolated worktrees.

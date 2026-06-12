@@ -40,8 +40,8 @@ field() {
     }' "$1"
 }
 
-printf '%-6s %-12s %-9s %-7s %-5s %-12s %s\n' ID STATUS PRIORITY HORIZON HITL TYPE TITLE
-printf '%-6s %-12s %-9s %-7s %-5s %-12s %s\n' "----" "------" "--------" "-------" "----" "----" "-----"
+printf '%-6s %-12s %-9s %-7s %-5s %-12s %-18s %s\n' ID STATUS PRIORITY HORIZON HITL TYPE AGENT TITLE
+printf '%-6s %-12s %-9s %-7s %-5s %-12s %-18s %s\n' "----" "------" "--------" "-------" "----" "----" "-----" "-----"
 
 shopt -s nullglob 2>/dev/null || true
 found=""
@@ -54,12 +54,16 @@ for f in $(ls -1 "$ROOT/.TerMinal/backlog"/[0-9]*.md "$ROOT/backlog"/[0-9]*.md 2
   horizon="$(field "$f" horizon)"
   [ -z "$horizon" ] && horizon="now"           # default for tickets predating the field
   hitl="$(field "$f" hitl)"
+  agent_id="$(field "$f" agent_id)"
+  agent_scope="$(field "$f" agent_scope)"
+  [ -z "$agent_id" ] && agent_id="1000x-ai-engineer"
+  [ -z "$agent_scope" ] && agent_scope="global"
   [ "$hitl" = "true" ] && hitl_disp="HITL" || hitl_disp=""
   [ -n "$want_status" ]   && [ "$status" != "$want_status" ]     && continue
   [ -n "$want_priority" ] && [ "$priority" != "$want_priority" ] && continue
   [ -n "$want_horizon" ]  && [ "$horizon" != "$want_horizon" ]   && continue
   [ -n "$want_hitl" ]     && [ "$hitl" != "true" ]               && continue
-  printf '%-6s %-12s %-9s %-7s %-5s %-12s %s\n' \
-    "$(field "$f" id)" "$status" "$priority" "$horizon" "$hitl_disp" "$(field "$f" type)" "$(field "$f" title)"
+  printf '%-6s %-12s %-9s %-7s %-5s %-12s %-18s %s\n' \
+    "$(field "$f" id)" "$status" "$priority" "$horizon" "$hitl_disp" "$(field "$f" type)" "${agent_scope}/${agent_id}" "$(field "$f" title)"
 done
 [ -n "$found" ] || echo "(no tickets yet — create one with /ticket)" >&2

@@ -2,7 +2,7 @@
 
 A reusable, self-contained **workflow template** for private GitHub *or* GitLab
 projects. Drop it into a new repo and you get a complete, in-repo development
-loop: sessions → tickets → feature branches → PRs/MRs → Codex code-review →
+loop: sessions → tickets → feature branches → PRs/MRs → code-review agent →
 human merge, with a knowledge base, TDD gate, cadence checks, and autonomous/AFK
 modes — all versioned with the code, no external tracker or dashboard.
 
@@ -44,7 +44,7 @@ engine picker, background runs, schedules, and terminal instances; Cursor does
 not currently use the Claude/Codex skill folders as native slash skills. So:
 
 - **A scaffolded repo needs no global-skills setup.** The workflow is bundled
-  and self-contained: `/code-review`, `/check`, and `/test-suite` delegate to
+  and self-contained: the `code-review` agent, `/check`, and `/test-suite` delegate to
   Codex with self-contained prompts (they do **not** call Codex's global slash
   commands), so they work as long as `claude` + `codex` are installed. TerMinal
   one-click agents may use `cursor-agent` when selected.
@@ -74,7 +74,8 @@ bootstrap.sh                  inject the workflow into an existing repo
     session-start/            open a session: seed live doc + TDD checklist
     session-end/              close a session: document, clean up, file follow-ups
     pr-creation/              ticket → branch → PR/MR → link back to ticket
-    code-review/              Codex review → in-repo .TerMinal/reviews artifacts
+    code-review/              reviewer contract → in-repo .TerMinal/reviews artifacts
+    digest/                   human-review digest → chunked, risk-ranked, code-first .chunks.json
     merge-sync/               reconcile tickets ↔ reality (close merged + drift sweep)
     test-suite/               ad-hoc chat-only test run (the cheap inner loop)
     check/                    cadence repo inspections → .TerMinal/checks (dead-code, …)
@@ -97,6 +98,7 @@ bootstrap.sh                  inject the workflow into an existing repo
 .agents/
   forge.md                    GitHub/GitLab detection + gh↔glab command mapping
   code-review.md              review contract: schema, six-axis rubric, verdicts
+  digest.md                   human-review digest contract: chunk schema, classification, decisions
   testing.md                  test-runner detection
   dead-code.md                example cadence-check spec (+ pattern to copy)
 .github/workflows/ci.yml      format + typecheck + test (+ optional eval gate)
@@ -127,8 +129,8 @@ does not move existing data.
 
 ```
 /session-start "<goal>"  →  /ticket  →  feature branch  →  TDD  →
-/pr-creation  →  /code-review (background)  →  <human merges>  →
-/merge-sync  →  /session-end
+/pr-creation  →  code-review agent (background)  →  /digest (human read)  →
+<human merges>  →  /merge-sync  →  /session-end
 ```
 
 See [`CLAUDE.md`](./CLAUDE.md) for the full conventions: the TDD gate, the
@@ -139,7 +141,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full conventions: the TDD gate, the
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code) — runs the skills.
-- [`codex`](https://github.com/openai/codex) CLI — `/code-review`, `/check`,
+- [`codex`](https://github.com/openai/codex) CLI — code-review agent, `/check`,
   `/test-suite` delegate to it (`-s danger-full-access`).
 - [`cursor-agent`](https://cursor.com) CLI — optional TerMinal engine for
   agents, schedules, and terminal instances.
