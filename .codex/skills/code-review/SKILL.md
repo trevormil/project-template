@@ -81,6 +81,25 @@ fi
 (Exit code 0 = continue to codex; 2 = short-circuit handled; 3 = bad URL;
 4 = no test runner detected.)
 
+**Stage 1.7 — digest skeleton (best-effort; the human read surface):**
+
+If the repo has the `/digest` tooling, prep the chunk skeleton so the review
+codex can ALSO emit a digest patch in the same pass (one run, both artifacts —
+see [`.agents/digest.md`](../../../.agents/digest.md)). This is purely additive:
+it never touches the review, scores, findings, or verdict.
+
+```bash
+REVIEW_ROOT=$([ -d .reviews ] && [ ! -f .TerMinal/template.json ] && echo .reviews || echo .TerMinal/reviews)
+if [ -x .claude/bin/chunk-diff ]; then
+  git diff "origin/$BASE...$HEAD" > "$REVIEW_ROOT/$PR/$SHORT.diff.patch"
+  .claude/bin/chunk-diff --patch "$REVIEW_ROOT/$PR/$SHORT.diff.patch" \
+    --pr "$REPO#$PR" --short "$SHORT" \
+    --out "$REVIEW_ROOT/$PR/$SHORT.chunks.json" \
+    --scoped-out "$REVIEW_ROOT/$PR/$SHORT.scoped.diff" \
+    $( [ -f "$REVIEW_ROOT/$PR/findings.json" ] && echo --findings "$REVIEW_ROOT/$PR/findings.json" )
+fi
+```
+
 **Stage 2 — codex exec (only if no short-circuit):**
 
 Codex consumes the packet so it doesn't redo the recon. Pass the packet path
@@ -135,6 +154,13 @@ MERGE_READY=$(echo "$VERDICT" | jq -r '.merge_ready')
 RISK_TIER=$(echo "$VERDICT" | jq -r '.risk_tier')
 sed -i '' "s/^verdict:.*/verdict: $VERDICT_VAL/; s/^merge_ready:.*/merge_ready: $MERGE_READY/; \
            s/^risk_tier:.*/risk_tier: $RISK_TIER/" "$REVIEW_ROOT/$PR/$SHORT.md"
+
+# Best-effort: assemble the digest if the review codex emitted a patch (Stage 1.7
+# prepped the skeleton; the prompt asked for the patch). Never gates the review.
+if [ -f "$REVIEW_ROOT/$PR/$SHORT.digest-patch.json" ] && [ -x .claude/bin/merge-digest ]; then
+  .claude/bin/merge-digest --chunks "$REVIEW_ROOT/$PR/$SHORT.chunks.json" \
+    --patch "$REVIEW_ROOT/$PR/$SHORT.digest-patch.json" || true
+fi
 ```
 
 The two helper scripts eliminate the YAML-quoting class of bugs and the

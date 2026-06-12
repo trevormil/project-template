@@ -15,4 +15,6 @@ title='...' type=... agentId=... agentScope=... agentKind=...` and reference the
 slug in Suggestions. If a finding needs multiple agents/phases, file multiple
 linked tickets instead of one broad ticket.
 
+Additionally — best-effort, and ONLY after the review artifact + `findings-new` block are complete — emit a human-review **digest patch**. This does NOT affect your review, scores, findings, or verdict; it's a separate read surface (see .agents/digest.md). If `.TerMinal/reviews/{{PR_NUMBER}}/{{SHORT_SHA}}.chunks.json` (or `.reviews/{{PR_NUMBER}}/{{SHORT_SHA}}.chunks.json` in legacy v1) exists, read it and write `{{SHORT_SHA}}.digest-patch.json` next to it: a `brief` (3-5 sentences), `blast_radius` (one line), `decisions` (synthesized from each chunk's `decision_signals` — title/category/files/what/why/reversibility), `double_check` (1-3 `{file,why}`), an optional mermaid `diagram` (only if structure changed), and a `chunks` map of `{summary (≤200 chars), note}` for the NON-🟢 chunk ids only. You already have the diff in context. Keep it bounded; if you're low on budget, skip it entirely — the review is what matters.
+
 The shell sandbox is danger-full-access — the test gate may bind loopback ports or write /tmp.
