@@ -44,10 +44,12 @@ DIR="$REVIEW_ROOT/$PR"; mkdir -p "$DIR"
 **Stage 1 — deterministic chunking** (zero tokens):
 
 ```bash
-git diff "origin/$BASE...$HEAD" > "/tmp/digest-$SHORT.diff"
+# Write the diff in-repo (under cwd) so a light codex sandbox can read it, and
+# so TerMinal renders the exact same base→head lines.
+git diff "origin/$BASE...$HEAD" > "$DIR/$SHORT.diff.patch"
 
 .claude/bin/chunk-diff \
-  --patch "/tmp/digest-$SHORT.diff" \
+  --patch "$DIR/$SHORT.diff.patch" \
   $( [ -f "$DIR/findings.json" ] && echo --findings "$DIR/findings.json" ) \
   --pr "$REPO#$PR" --short "$SHORT" \
   --out "$DIR/$SHORT.chunks.json"
@@ -55,19 +57,29 @@ git diff "origin/$BASE...$HEAD" > "/tmp/digest-$SHORT.diff"
 
 For a **joint MR** (factory/stacked-MR), add `--joint "<member-mr-csv>"`.
 
-**Stage 2 — codex digest pass** (the only LLM step; bounded output):
+**Stage 2 — codex digest pass** (the only LLM step; bounded output, ~60s):
 
 ```bash
 sed "s|{{PR}}|$PR|; s|{{SHORT}}|$SHORT|; s|{{BASE}}|$BASE|; s|{{HEAD}}|$HEAD|; \
-     s|{{DIR}}|$DIR|; s|{{DIFF_PATH}}|/tmp/digest-$SHORT.diff|" \
+     s|{{DIR}}|$DIR|; s|{{DIFF_PATH}}|$DIR/$SHORT.diff.patch|" \
   .claude/skills/digest/prompt.md > /tmp/digest-prompt-$$.txt
 
-codex exec -s danger-full-access -C "$PWD" "$(cat /tmp/digest-prompt-$$.txt)"
+codex exec -s workspace-write -c model_reasoning_effort="low" -C "$PWD" \
+  "$(cat /tmp/digest-prompt-$$.txt)" < /dev/null
 ```
 
-`-s danger-full-access` matches `/code-review` (codex's default sandbox blocks
-some macOS operations). The pass writes `$DIR/$SHORT.digest-patch.json` and
-nothing else.
+Three deliberate speed/safety levers (a digest is bounded extraction, not a
+review — it doesn't need depth or broad access):
+- `< /dev/null` — **mandatory.** Without it `codex exec` blocks on
+  `Reading additional input from stdin…` and hangs indefinitely in
+  headless/background invocations.
+- `-c model_reasoning_effort="low"` — the task is fill-a-JSON-patch; low
+  reasoning cuts wall-clock to ~60s with no quality loss.
+- `-s workspace-write` (not `danger-full-access`) — the pass only reads
+  `$DIR/$SHORT.{chunks.json,diff.patch}` and writes one file under cwd. No
+  tests run, so the macOS Mach-port carve-out `/code-review` needs doesn't apply.
+
+The pass writes `$DIR/$SHORT.digest-patch.json` and nothing else.
 
 **In factory/stacked-MR mode, skip Stage 2's separate codex call** — the joint
 MR's `/code-review` codex session emits the patch alongside its review (it
