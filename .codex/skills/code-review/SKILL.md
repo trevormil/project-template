@@ -81,25 +81,6 @@ fi
 (Exit code 0 = continue to codex; 2 = short-circuit handled; 3 = bad URL;
 4 = no test runner detected.)
 
-**Stage 1.7 — digest skeleton (best-effort; the human read surface):**
-
-If the repo has the `/digest` tooling, prep the chunk skeleton so the review
-codex can ALSO emit a digest patch in the same pass (one run, both artifacts —
-see [`.agents/digest.md`](../../../.agents/digest.md)). This is purely additive:
-it never touches the review, scores, findings, or verdict.
-
-```bash
-REVIEW_ROOT=$([ -d .reviews ] && [ ! -f .TerMinal/template.json ] && echo .reviews || echo .TerMinal/reviews)
-if [ -x .claude/bin/chunk-diff ]; then
-  git diff "origin/$BASE...$HEAD" > "$REVIEW_ROOT/$PR/$SHORT.diff.patch"
-  .claude/bin/chunk-diff --patch "$REVIEW_ROOT/$PR/$SHORT.diff.patch" \
-    --pr "$REPO#$PR" --short "$SHORT" \
-    --out "$REVIEW_ROOT/$PR/$SHORT.chunks.json" \
-    --scoped-out "$REVIEW_ROOT/$PR/$SHORT.scoped.diff" \
-    $( [ -f "$REVIEW_ROOT/$PR/findings.json" ] && echo --findings "$REVIEW_ROOT/$PR/findings.json" )
-fi
-```
-
 **Stage 2 — codex exec (only if no short-circuit):**
 
 Codex consumes the packet so it doesn't redo the recon. Pass the packet path
@@ -154,18 +135,43 @@ MERGE_READY=$(echo "$VERDICT" | jq -r '.merge_ready')
 RISK_TIER=$(echo "$VERDICT" | jq -r '.risk_tier')
 sed -i '' "s/^verdict:.*/verdict: $VERDICT_VAL/; s/^merge_ready:.*/merge_ready: $MERGE_READY/; \
            s/^risk_tier:.*/risk_tier: $RISK_TIER/" "$REVIEW_ROOT/$PR/$SHORT.md"
-
-# Best-effort: assemble the digest if the review codex emitted a patch (Stage 1.7
-# prepped the skeleton; the prompt asked for the patch). Never gates the review.
-if [ -f "$REVIEW_ROOT/$PR/$SHORT.digest-patch.json" ] && [ -x .claude/bin/merge-digest ]; then
-  .claude/bin/merge-digest --chunks "$REVIEW_ROOT/$PR/$SHORT.chunks.json" \
-    --patch "$REVIEW_ROOT/$PR/$SHORT.digest-patch.json" || true
-fi
 ```
 
 The two helper scripts eliminate the YAML-quoting class of bugs and the
 verdict-drift problem (scoring on the LLM side; verdict computed
 deterministically from rules in the contract).
+
+## Stage 4 — digest, ONLY on a passing review
+
+The digest is the human read surface for a **mergeable** PR. Do not waste a
+codex pass digesting a failing review — gate it on the verdict. Run this only
+after Stage 3, only when the review passed (`approve` + `merge_ready`), and only
+if the repo has the `/digest` tooling:
+
+```bash
+if [ "$VERDICT_VAL" = "approve" ] && [ "$MERGE_READY" = "true" ] && [ -x .claude/bin/chunk-diff ]; then
+  git diff "origin/$BASE...$HEAD" > "$REVIEW_ROOT/$PR/$SHORT.diff.patch"
+  .claude/bin/chunk-diff --patch "$REVIEW_ROOT/$PR/$SHORT.diff.patch" \
+    --pr "$REPO#$PR" --short "$SHORT" \
+    --out "$REVIEW_ROOT/$PR/$SHORT.chunks.json" \
+    --scoped-out "$REVIEW_ROOT/$PR/$SHORT.scoped.diff" \
+    $( [ -f "$REVIEW_ROOT/$PR/findings.json" ] && echo --findings "$REVIEW_ROOT/$PR/findings.json" )
+
+  sed "s|{{PR}}|$PR|; s|{{SHORT}}|$SHORT|; s|{{BASE}}|$BASE|; s|{{HEAD}}|$HEAD|; \
+       s|{{DIR}}|$REVIEW_ROOT/$PR|; s|{{DIFF_PATH}}|$REVIEW_ROOT/$PR/$SHORT.scoped.diff|" \
+    .claude/skills/digest/prompt.md > /tmp/cr-digest-$$.txt
+  codex exec -s workspace-write -c model_reasoning_effort="low" -C "$PWD" \
+    "$(cat /tmp/cr-digest-$$.txt)" < /dev/null
+
+  [ -f "$REVIEW_ROOT/$PR/$SHORT.digest-patch.json" ] && .claude/bin/merge-digest \
+    --chunks "$REVIEW_ROOT/$PR/$SHORT.chunks.json" \
+    --patch  "$REVIEW_ROOT/$PR/$SHORT.digest-patch.json" || true
+fi
+```
+
+This is a separate ~60s codex pass (the `/digest` skill's), fired only for green
+reviews. A `request-changes`/`blocked` review produces no digest — fix the
+review first, re-review, and the digest lands when it passes.
 
 ## Token economy (vs the prior single-codex-call flow)
 
