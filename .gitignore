@@ -25,3 +25,11 @@ build/
 # OS / editor cruft
 .DS_Store
 *.log
+
+# digest intermediates (ephemeral; final .chunks.json + review .md are kept)
+.TerMinal/reviews/**/*.scoped.diff
+.TerMinal/reviews/**/*.digest-prompt.txt
+.TerMinal/reviews/**/*.digest.log
+.reviews/**/*.scoped.diff
+.reviews/**/*.digest-prompt.txt
+.reviews/**/*.digest.log
