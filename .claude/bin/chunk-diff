@@ -23,6 +23,7 @@ type FileBlock = {
   deleted: number;
   addedLines: string[];
   removedLines: string[];
+  raw: string[]; // verbatim block lines, for emitting a scoped diff
 };
 
 type Risk = 'green' | 'yellow' | 'red';
@@ -49,6 +50,7 @@ function usage(code = 0): never {
 
   --patch <file>       unified diff to chunk (or - for stdin)        [required]
   --out <file>         where to write the chunks.json skeleton (or -) [required]
+  --scoped-out <file>  also write a diff of ONLY non-🟢 blocks (the model input)
   --findings <file>    findings.json; open findings pin their file to 🔴
   --pr <repo#number>   header label for the artifact
   --short <sha>        head short sha for the artifact header
@@ -93,10 +95,12 @@ function parseDiff(patch: string): FileBlock[] {
         deleted: 0,
         addedLines: [],
         removedLines: [],
+        raw: [line],
       };
       continue;
     }
     if (!cur) continue;
+    cur.raw.push(line);
 
     if (line.startsWith('rename from ')) {
       cur.oldPath = line.slice('rename from '.length);
@@ -275,9 +279,11 @@ async function main() {
   );
 
   const blocks = parseDiff(patch);
+  const scopedBlocks: string[] = []; // raw diff of non-🟢 blocks, for the scoped model input
   const chunks: Chunk[] = blocks.map((block) => {
     const file = block.newPath ?? block.oldPath ?? 'unknown';
     const { kind, risk, green_label } = classify(block, openFindingFiles);
+    if (risk !== 'green') scopedBlocks.push(block.raw.join('\n'));
     return {
       id: chunkId(file, block.hunks),
       file,
@@ -337,10 +343,20 @@ async function main() {
   if (opt.out === '-') process.stdout.write(serialized);
   else await writeFile(opt.out, serialized, 'utf8');
 
+  // Scoped diff: only the non-🟢 blocks — what the model actually needs. 🟢
+  // content (lockfiles, generated, docs, whitespace) never reaches the LLM.
+  let scopedNote = '';
+  if (opt['scoped-out']) {
+    const scoped = scopedBlocks.length ? scopedBlocks.join('\n') + '\n' : '';
+    await writeFile(opt['scoped-out'], scoped, 'utf8');
+    const pct = patch.length ? Math.round((1 - scoped.length / patch.length) * 100) : 0;
+    scopedNote = `; scoped input ${scoped.length}/${patch.length} chars (−${pct}% vs full diff)`;
+  }
+
   console.error(
     `${out.stats.chunks} chunks — ${out.stats.red}🔴 ${out.stats.yellow}🟡 ${out.stats.green}🟢; ` +
       `${out.stats.llm_chunks}/${out.stats.chunks} need the model; ` +
-      `${out.decision_candidates.length} design-decision candidate(s)`,
+      `${out.decision_candidates.length} design-decision candidate(s)${scopedNote}`,
   );
 }
 

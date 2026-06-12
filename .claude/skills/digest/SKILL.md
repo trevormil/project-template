@@ -44,16 +44,22 @@ DIR="$REVIEW_ROOT/$PR"; mkdir -p "$DIR"
 **Stage 1 — deterministic chunking** (zero tokens):
 
 ```bash
-# Write the diff in-repo (under cwd) so a light codex sandbox can read it, and
-# so TerMinal renders the exact same base→head lines.
+# Write the FULL diff in-repo (TerMinal renders every chunk's lines from it),
+# and a SCOPED diff (non-🟢 blocks only) that is what the model actually reads.
 git diff "origin/$BASE...$HEAD" > "$DIR/$SHORT.diff.patch"
 
 .claude/bin/chunk-diff \
   --patch "$DIR/$SHORT.diff.patch" \
   $( [ -f "$DIR/findings.json" ] && echo --findings "$DIR/findings.json" ) \
   --pr "$REPO#$PR" --short "$SHORT" \
-  --out "$DIR/$SHORT.chunks.json"
+  --out "$DIR/$SHORT.chunks.json" \
+  --scoped-out "$DIR/$SHORT.scoped.diff"
 ```
+
+`--scoped-out` drops every 🟢 block (lockfile / generated / docs / whitespace /
+rename) from the model's input. On a logic-heavy MR this is ~0% (nothing to cut);
+on an MR that regenerates a big lockfile or snapshot it can be most of the diff —
+the silent token killer never reaches the LLM.
 
 For a **joint MR** (factory/stacked-MR), add `--joint "<member-mr-csv>"`.
 
@@ -61,7 +67,7 @@ For a **joint MR** (factory/stacked-MR), add `--joint "<member-mr-csv>"`.
 
 ```bash
 sed "s|{{PR}}|$PR|; s|{{SHORT}}|$SHORT|; s|{{BASE}}|$BASE|; s|{{HEAD}}|$HEAD|; \
-     s|{{DIR}}|$DIR|; s|{{DIFF_PATH}}|$DIR/$SHORT.diff.patch|" \
+     s|{{DIR}}|$DIR|; s|{{DIFF_PATH}}|$DIR/$SHORT.scoped.diff|" \
   .claude/skills/digest/prompt.md > /tmp/digest-prompt-$$.txt
 
 codex exec -s workspace-write -c model_reasoning_effort="low" -C "$PWD" \

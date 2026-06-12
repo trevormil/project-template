@@ -8,7 +8,10 @@ diff fast, without hiding any code.
 - Chunk skeleton: `{{DIR}}/{{SHORT}}.chunks.json`
   Every changed file is already classified into a chunk with `id`, `file`,
   `kind`, `risk`, and `decision_signals`. 🟢 chunks are DONE — ignore them.
-- Full diff: `{{DIFF_PATH}}` (`git diff origin/{{BASE}}...{{HEAD}}`).
+- Scoped diff: `{{DIFF_PATH}}` — contains ONLY the non-🟢 file blocks (the ones
+  needing your attention). 🟢 files (lockfile / generated / docs / whitespace /
+  rename) are intentionally ABSENT to save tokens; the skeleton still lists them
+  so you know they exist, but do not look for or annotate their content.
 
 ## Output (write this file and nothing else)
 
