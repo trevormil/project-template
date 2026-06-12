@@ -66,7 +66,21 @@ async function main() {
   // MR-level fields
   digest.brief = patch.brief ?? digest.brief;
   digest.blast_radius = patch.blast_radius ?? digest.blast_radius;
-  digest.diagram = patch.diagram ?? digest.diagram;
+  // Diagrams: accept an array of {title,kind,mermaid}; fall back to a legacy
+  // single `diagram` string. Drop empties.
+  const rawDiagrams = Array.isArray(patch.diagrams)
+    ? patch.diagrams
+    : typeof patch.diagram === 'string' && patch.diagram.trim()
+      ? [{ title: 'How it fits', kind: 'flow', mermaid: patch.diagram }]
+      : [];
+  digest.diagrams = rawDiagrams
+    .map((d: any) => ({
+      title: String(d.title || 'Diagram'),
+      kind: String(d.kind || 'flow'),
+      mermaid: String(d.mermaid || d.source || '').trim(),
+    }))
+    .filter((d: any) => d.mermaid);
+  delete digest.diagram;
   digest.double_check = Array.isArray(patch.double_check) ? patch.double_check : digest.double_check;
   digest.generator = 'codex:gpt-5 + chunk-diff';
 

@@ -12,7 +12,18 @@
 import { createHash } from 'crypto';
 import { readFile, writeFile } from 'fs/promises';
 
-type Hunk = { header: string; old_start: number; new_start: number };
+type Hunk = {
+  header: string;
+  old_start: number;
+  new_start: number;
+  addedLines: string[]; // transient — for per-hunk mechanical classification
+  removedLines: string[];
+  mechanical: boolean; // every changed line is whitespace / import / comment
+  label: string; // 'imports' | 'comments' | 'whitespace' | '' (substantive)
+};
+
+// What the artifact carries per hunk (no line text — keeps it small).
+type HunkOut = { header: string; old_start: number; new_start: number; mechanical: boolean; label: string };
 
 type FileBlock = {
   oldPath: string | null;
@@ -43,7 +54,7 @@ type Chunk = {
   note: string | null;
   confidence: string | null;
   decision_signals: string[];
-  hunks: Hunk[];
+  hunks: HunkOut[];
 };
 
 function usage(code = 0): never {
@@ -82,10 +93,12 @@ async function readJson<T>(path: string, fallback: T): Promise<T> {
 function parseDiff(patch: string): FileBlock[] {
   const files: FileBlock[] = [];
   let cur: FileBlock | null = null;
+  let curHunk: Hunk | null = null;
 
   for (const line of patch.split('\n')) {
     if (line.startsWith('diff --git ')) {
       if (cur) files.push(cur);
+      curHunk = null;
       const m = line.match(/^diff --git a\/(.+?) b\/(.+)$/);
       cur = {
         oldPath: m ? m[1] : null,
@@ -117,13 +130,26 @@ function parseDiff(patch: string): FileBlock[] {
       cur.status = 'binary';
     } else if (line.startsWith('@@')) {
       const hm = line.match(/^(@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@)/);
-      if (hm) cur.hunks.push({ header: hm[1], old_start: Number(hm[2]), new_start: Number(hm[3]) });
+      if (hm) {
+        curHunk = {
+          header: hm[1],
+          old_start: Number(hm[2]),
+          new_start: Number(hm[3]),
+          addedLines: [],
+          removedLines: [],
+          mechanical: false,
+          label: '',
+        };
+        cur.hunks.push(curHunk);
+      }
     } else if (line.startsWith('+') && !line.startsWith('+++')) {
       cur.added++;
       cur.addedLines.push(line.slice(1));
+      curHunk?.addedLines.push(line.slice(1));
     } else if (line.startsWith('-') && !line.startsWith('---')) {
       cur.deleted++;
       cur.removedLines.push(line.slice(1));
+      curHunk?.removedLines.push(line.slice(1));
     }
   }
   if (cur) files.push(cur);
@@ -152,27 +178,46 @@ const SENSITIVE: { label: string; re: RegExp }[] = [
 const IMPORT_LINE = /^\s*(import\s|export\s.*\sfrom\s|from\s.+\simport\s|use\s|using\s|require\()/;
 const COMMENT_LINE = /^\s*(\/\/|\/\*|\*\/?|#|--|<!--|;;?|"""|''')/;
 
-function changedLines(block: FileBlock): string[] {
-  return [...block.addedLines, ...block.removedLines].map((l) => l.trim()).filter(Boolean);
+// Both FileBlock and Hunk carry addedLines/removedLines, so these work at either
+// granularity (whole-file green classification, or per-hunk mechanical collapse).
+type Lines = { addedLines: string[]; removedLines: string[] };
+
+function changedLines(x: Lines): string[] {
+  return [...x.addedLines, ...x.removedLines].map((l) => l.trim()).filter(Boolean);
 }
 
-function isImportOnly(block: FileBlock): boolean {
-  const lines = changedLines(block);
+function isImportOnly(x: Lines): boolean {
+  const lines = changedLines(x);
   return lines.length > 0 && lines.every((l) => IMPORT_LINE.test(l));
 }
 
-function isCommentOnly(block: FileBlock): boolean {
-  const lines = changedLines(block);
+function isCommentOnly(x: Lines): boolean {
+  const lines = changedLines(x);
   return lines.length > 0 && lines.every((l) => COMMENT_LINE.test(l));
 }
 
-function isWhitespaceOnly(block: FileBlock): boolean {
-  if (block.addedLines.length === 0 && block.removedLines.length === 0) return false;
+function isWhitespaceOnly(x: Lines): boolean {
+  if (x.addedLines.length === 0 && x.removedLines.length === 0) return false;
   const norm = (arr: string[]) => arr.map((l) => l.replace(/\s+/g, '')).filter(Boolean).sort();
-  const a = norm(block.addedLines);
-  const r = norm(block.removedLines);
+  const a = norm(x.addedLines);
+  const r = norm(x.removedLines);
   if (a.length !== r.length || a.length === 0) return false;
   return JSON.stringify(a) === JSON.stringify(r);
+}
+
+// Per-hunk: is this hunk pure noise (imports/comments/whitespace) the human can
+// skip even inside a non-🟢 file? Sets mechanical + a label, in place.
+function classifyHunk(h: Hunk): void {
+  if (isWhitespaceOnly(h)) {
+    h.mechanical = true;
+    h.label = 'whitespace';
+  } else if (isImportOnly(h)) {
+    h.mechanical = true;
+    h.label = 'imports';
+  } else if (isCommentOnly(h)) {
+    h.mechanical = true;
+    h.label = 'comments';
+  }
 }
 
 type Classification = { kind: string; risk: Risk; green_label: string | null; risk_reason: string };
@@ -294,6 +339,7 @@ async function main() {
   const chunks: Chunk[] = blocks.map((block) => {
     const file = block.newPath ?? block.oldPath ?? 'unknown';
     const { kind, risk, green_label, risk_reason } = classify(block, openFindingFiles);
+    block.hunks.forEach(classifyHunk);
     if (risk !== 'green') scopedBlocks.push(block.raw.join('\n'));
     return {
       id: chunkId(file, block.hunks),
@@ -310,7 +356,13 @@ async function main() {
       note: null,
       confidence: null,
       decision_signals: green_label ? [] : decisionSignals(block),
-      hunks: block.hunks,
+      hunks: block.hunks.map((h) => ({
+        header: h.header,
+        old_start: h.old_start,
+        new_start: h.new_start,
+        mechanical: h.mechanical,
+        label: h.label,
+      })),
     };
   });
 
@@ -331,7 +383,7 @@ async function main() {
         : false,
     brief: null,
     blast_radius: null,
-    diagram: null,
+    diagrams: [],
     double_check: [],
     // Synthesized by the codex digest pass from the per-chunk decision_signals below.
     decisions: [],

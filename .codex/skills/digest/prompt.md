@@ -21,7 +21,7 @@ Write `{{DIR}}/{{SHORT}}.digest-patch.json` — a single JSON object:
 {
   "brief": "3–5 sentences: what this MR does, why, blast radius. Prose, plain.",
   "blast_radius": "one line: subsystems touched + worst-case if wrong",
-  "diagram": null,
+  "diagrams": [],
   "double_check": [{ "file": "path:line", "why": "one line" }],
   "decisions": [],
   "chunks": {}
@@ -51,9 +51,15 @@ Write `{{DIR}}/{{SHORT}}.digest-patch.json` — a single JSON object:
    heuristics missed. `low` reversibility = migrations, public API, service
    lock-in.
 
-3. **`diagram`** — set to a mermaid string ONLY if the change alters structure
-   (adds/removes files, exports, routes, cross-module edges). Otherwise `null`.
-   `graph LR` for "how it fits", `sequenceDiagram` for a changed flow.
+3. **`diagrams`** — an array of `{ "title", "kind", "mermaid" }`, **0 to a few**.
+   Emit one per distinct view that genuinely clarifies the change; emit NONE for
+   a trivial in-function edit (don't force it). Pick the right kind per view:
+   - `flow` — `graph LR`/`graph TD` for how-it-fits / module wiring
+   - `sequence` — `sequenceDiagram` for a changed request/call flow
+   - `er` — `erDiagram` for data-model / schema / table changes
+   - `state` — `stateDiagram-v2` for a state machine / status lifecycle
+   `title` is a short label; `mermaid` is valid mermaid source for that kind. A
+   schema + new flow might warrant two diagrams (an `er` and a `sequence`).
 
 4. **`double_check`** — the 1–3 specific spots a human should personally eyeball,
    by `file:line`. Empty array if it's all rubber-stamp.
