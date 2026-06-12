@@ -95,7 +95,11 @@ async function main() {
     if (typeof p.summary === 'string') chunk.summary = p.summary.slice(0, 220);
     if (typeof p.note === 'string') chunk.note = p.note;
     chunk.confidence = typeof p.confidence === 'string' ? p.confidence : null;
-    chunk.risk = applyRiskOverride(chunk.risk as Risk, chunk.kind, p.risk);
+    const nextRisk = applyRiskOverride(chunk.risk as Risk, chunk.kind, p.risk);
+    if (nextRisk !== chunk.risk) {
+      chunk.risk_reason = nextRisk === 'red' ? 'model-flagged' : nextRisk === 'green' ? 'model: trivial' : chunk.risk_reason;
+    }
+    chunk.risk = nextRisk;
   }
 
   // Re-sort + recompute stats from final risk.

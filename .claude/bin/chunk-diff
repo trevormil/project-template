@@ -34,6 +34,7 @@ type Chunk = {
   old_path: string | null;
   kind: string;
   risk: Risk;
+  risk_reason: string;
   status: FileBlock['status'];
   added: number;
   deleted: number;
@@ -137,17 +138,19 @@ const DOCS = /\.(md|mdx|rst|txt|adoc)$/;
 const TEST = /(^|\/)(test|tests|__tests__|spec|e2e)\/|(\.|-)(test|spec)\.[cm]?[jt]sx?$/;
 const CONFIG = /\.(ya?ml|json|toml|ini|cfg|conf)$|(^|\/)\.env/;
 
-const SENSITIVE: RegExp[] = [
-  /auth|session|login|oauth|jwt|cookie|password|credential/i,
-  /admin|permission|\brole\b|policy|tenant|rbac|authz/i,
-  /payment|checkout|stripe|invoice|billing|balance|ledger|wallet/i,
-  /(^|\/)migrations?(\/|$)|(^|\/)schema(\.|\/|$)|\.sql$|prisma|drizzle|mongoose/i,
-  /(^|\/)(api|routes?|controllers?|handlers?|server)\//i,
-  /upload|multipart|formdata/i,
-  /crypto|signing|keypair|secret/i,
+// Labeled so a 🔴 chunk can report WHICH surface pinned it (the risk reason).
+const SENSITIVE: { label: string; re: RegExp }[] = [
+  { label: 'auth', re: /auth|session|login|oauth|jwt|cookie|password|credential/i },
+  { label: 'authz', re: /admin|permission|\brole\b|policy|tenant|rbac|authz/i },
+  { label: 'payments', re: /payment|checkout|stripe|invoice|billing|balance|ledger|wallet/i },
+  { label: 'db/migration', re: /(^|\/)migrations?(\/|$)|(^|\/)schema(\.|\/|$)|\.sql$|prisma|drizzle|mongoose/i },
+  { label: 'api route', re: /(^|\/)(api|routes?|controllers?|handlers?|server)\//i },
+  { label: 'file-upload', re: /upload|multipart|formdata/i },
+  { label: 'crypto', re: /crypto|signing|keypair|secret/i },
 ];
 
 const IMPORT_LINE = /^\s*(import\s|export\s.*\sfrom\s|from\s.+\simport\s|use\s|using\s|require\()/;
+const COMMENT_LINE = /^\s*(\/\/|\/\*|\*\/?|#|--|<!--|;;?|"""|''')/;
 
 function changedLines(block: FileBlock): string[] {
   return [...block.addedLines, ...block.removedLines].map((l) => l.trim()).filter(Boolean);
@@ -156,6 +159,11 @@ function changedLines(block: FileBlock): string[] {
 function isImportOnly(block: FileBlock): boolean {
   const lines = changedLines(block);
   return lines.length > 0 && lines.every((l) => IMPORT_LINE.test(l));
+}
+
+function isCommentOnly(block: FileBlock): boolean {
+  const lines = changedLines(block);
+  return lines.length > 0 && lines.every((l) => COMMENT_LINE.test(l));
 }
 
 function isWhitespaceOnly(block: FileBlock): boolean {
@@ -167,36 +175,39 @@ function isWhitespaceOnly(block: FileBlock): boolean {
   return JSON.stringify(a) === JSON.stringify(r);
 }
 
-function classify(
-  block: FileBlock,
-  openFindingFiles: Set<string>,
-): { kind: string; risk: Risk; green_label: string | null } {
+type Classification = { kind: string; risk: Risk; green_label: string | null; risk_reason: string };
+
+function classify(block: FileBlock, openFindingFiles: Set<string>): Classification {
   const file = block.newPath ?? block.oldPath ?? '';
+  const green = (kind: string, label: string): Classification => ({
+    kind,
+    risk: 'green',
+    green_label: label,
+    risk_reason: label,
+  });
 
   // Pure rename (R100, no content delta) — green.
   if (block.status === 'renamed' && block.hunks.length === 0) {
-    return { kind: 'rename', risk: 'green', green_label: `rename ${block.oldPath} → ${block.newPath}` };
+    return green('rename', `rename ${block.oldPath} → ${block.newPath}`);
   }
-  if (LOCKFILE.test(file)) return { kind: 'lockfile', risk: 'green', green_label: 'lockfile bump' };
-  if (GENERATED.test(file)) return { kind: 'generated', risk: 'green', green_label: 'generated' };
-  if (DOCS.test(file)) return { kind: 'docs', risk: 'green', green_label: 'docs' };
-  if (block.status !== 'binary' && isImportOnly(block)) {
-    return { kind: 'format', risk: 'green', green_label: 'import reorder' };
-  }
-  if (block.status !== 'binary' && isWhitespaceOnly(block)) {
-    return { kind: 'format', risk: 'green', green_label: 'whitespace-only' };
-  }
+  if (LOCKFILE.test(file)) return green('lockfile', 'lockfile bump');
+  if (GENERATED.test(file)) return green('generated', 'generated');
+  if (DOCS.test(file)) return green('docs', 'docs');
+  if (block.status !== 'binary' && isImportOnly(block)) return green('format', 'import reorder');
+  if (block.status !== 'binary' && isWhitespaceOnly(block)) return green('format', 'whitespace-only');
+  if (block.status !== 'binary' && isCommentOnly(block)) return green('comment', 'comments only');
 
   let kind = 'logic';
   if (TEST.test(file)) kind = 'test';
   else if (CONFIG.test(file)) kind = 'config';
 
-  // Risk floor: sensitive surface or an open finding pins to red. Cannot be lowered by the LLM.
-  let risk: Risk = 'yellow';
-  if (kind !== 'test' && (SENSITIVE.some((r) => r.test(file)) || openFindingFiles.has(file))) {
-    risk = 'red';
+  // Risk floor: sensitive surface or an open finding pins to red (LLM can't lower it).
+  if (kind !== 'test') {
+    if (openFindingFiles.has(file)) return { kind, risk: 'red', green_label: null, risk_reason: 'open finding' };
+    const surface = SENSITIVE.find((s) => s.re.test(file));
+    if (surface) return { kind, risk: 'red', green_label: null, risk_reason: surface.label };
   }
-  return { kind, risk, green_label: null };
+  return { kind, risk: 'yellow', green_label: null, risk_reason: kind };
 }
 
 // Deterministic detection of architecture/design-decision CANDIDATES. These are
@@ -282,7 +293,7 @@ async function main() {
   const scopedBlocks: string[] = []; // raw diff of non-🟢 blocks, for the scoped model input
   const chunks: Chunk[] = blocks.map((block) => {
     const file = block.newPath ?? block.oldPath ?? 'unknown';
-    const { kind, risk, green_label } = classify(block, openFindingFiles);
+    const { kind, risk, green_label, risk_reason } = classify(block, openFindingFiles);
     if (risk !== 'green') scopedBlocks.push(block.raw.join('\n'));
     return {
       id: chunkId(file, block.hunks),
@@ -290,6 +301,7 @@ async function main() {
       old_path: block.status === 'renamed' ? block.oldPath : null,
       kind,
       risk,
+      risk_reason,
       status: block.status,
       added: block.added,
       deleted: block.deleted,
