@@ -117,6 +117,16 @@ Two inboxes; full contracts in
 
 ## [5] Branches, PRs/MRs & the forge
 
+**Stacked PRs/MRs:** When a ticket naturally splits into dependent review units,
+prefer Graphite CLI (`gt`) for GitHub-backed stacked branches and PRs if it is
+installed and the repo is initialized with `.git/.graphite_repo_config`. Use
+`gt create`, `gt modify`, `gt sync`, and `gt submit --stack` to keep stack
+metadata, rebases, and PR links coherent. Treat Graphite as an optional authoring
+layer: fall back to `gh`/`glab` and normal branch workflows when the repo is not
+GitHub-backed, Graphite is unavailable, or the work is a single independent PR/MR.
+Graphite merge queue or stack merge must not bypass the human-only final merge
+gate.
+
 **Per-repo forge.** `.claude/bin/forge` prints `github` or `gitlab` (reads
 `.claude/forge` override, else detects from origin). Use the matching
 CLI + terminology — `gh`/"PR" or `glab`/"MR". Mapping:
