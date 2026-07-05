@@ -241,3 +241,23 @@ Every skill emits a feed event at each workflow milestone (so runs show live
 in TerMinal): `.claude/bin/activity <kind> "<title>" ["<detail>"]`. Exit-0
 safe; derives repo context from git. `kind` ∈ `ticket-filed` · `pr-verdict` ·
 `session-start` · `session-end` · `agent-run` · `info` · `error`.
+
+## [14] Vibe mode vs quality mode
+
+Two modes with **different contracts**; the skill is never confusing them.
+
+- **Quality mode is the default.** Everything above (§1's loop, TDD, review,
+  human merge) is quality mode — correctness, clarity, ownership. Anything that
+  ships lives here.
+- **Vibe mode is explicit and temporary.** Fast, gates-off exploration to learn
+  the shape of a problem — prototype competing approaches, generate N variants,
+  vibe an end-to-end artifact to mine for references. Output is **disposable
+  signal, not a shipping candidate.** Enter it with `/vibe` (or an explicit
+  "vibe this, skip the gates").
+
+Vibe to discover, switch to quality to ship. The guardrails are non-negotiable:
+isolated worktree/`vibe/*` branch (never the primary checkout, never `main` —
+`.claude/hooks/block-main-merge.sh` enforces the last part), no production side
+effects, disposable by contract, and a clean exit that rebuilds through the
+gates (`/ticket` → TDD → review) rather than promoting the vibe branch. Full
+contract + techniques: [`.claude/skills/vibe/SKILL.md`](./.claude/skills/vibe/SKILL.md).
