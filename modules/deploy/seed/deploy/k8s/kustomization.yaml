@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Prod deploy to the shared DOKS cluster. `kubectl apply -k deploy/k8s`.
+# Phase-0 stub — full base (namespace/deployment/service/ingress+cert-manager/
+# secret.example) is fleshed out in Phase 2 from autopilot-harness/K8s.md.
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
