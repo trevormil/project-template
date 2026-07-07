@@ -261,3 +261,23 @@ isolated worktree/`vibe/*` branch (never the primary checkout, never `main` —
 effects, disposable by contract, and a clean exit that rebuilds through the
 gates (`/ticket` → TDD → review) rather than promoting the vibe branch. Full
 contract + techniques: [`.claude/skills/vibe/SKILL.md`](./.claude/skills/vibe/SKILL.md).
+
+## [15] Model routing — outsource the cheap tier
+
+**Your own top model is the default and the orchestrator.** Don't reflexively
+downgrade to save money — quality is the default.
+
+**A downgrade to the near-free model tier is permitted only when the task carries
+a clear, machine-checkable acceptance criterion** — a test that goes red→green
+(suite still green), an exact expected output, an idempotent regen that matches,
+typecheck/lint/schema-validation — **OR the user explicitly requests a cheap
+model.** No criterion and not explicitly requested → no downgrade; do it yourself. Enforce the criterion *after* the cheap model runs; on failure, discard
+and redo on your own model. A wrong downgrade costs a retry, never a
+silently-shipped bad diff.
+
+When a task qualifies, hand it off via the global **`outsource` skill**: `or-exec`
+(raw one-shot) or `or-agent` (Codex on a cheap model — reads/edits files). Model
+menu, budget ($ daily pool + per-call cap), and spend log live in
+`~/.claude/model-routing/`. Near-free *paid* models only (~1–3% of frontier cost);
+free `:free` models are excluded (they 429 out of agentic loops). This tier
+composes with [2]'s TDD gate — the failing test *is* the acceptance criterion.
