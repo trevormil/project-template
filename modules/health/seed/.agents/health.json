@@ -1,8 +1,0 @@
-{
-  "id": "health",
-  "title": "Health check",
-  "description": "Deterministic /healthz probe → files a ticket on failure. Script-first, no model.",
-  "icon": "activity",
-  "opensPr": false,
-  "inPlace": true
-}
