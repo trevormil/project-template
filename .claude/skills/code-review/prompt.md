@@ -8,6 +8,8 @@ Follow .agents/code-review.md for the scoring rubric + artifact format. Score th
 
 Compose findings with copy-pasteable fix prompts in the body. After writing the artifact, emit a fenced ```findings-new ... ``` block containing the FRESH scan findings as a flat JSON array — the harness helper merges this with the prior findings.json deterministically (handles ids, first_seen_sha, auto-resolved transitions). Do NOT compute verdict or merge_ready yourself — the verdict helper will compute those from the scorecard + findings + test_status.
 
+If the change is visual/UX-affecting and a screenshot would materially help the reviewer or human merger decide, capture screenshots and write screenshots.json per the contract's Screenshots section (save frames under the review dir's screenshots/ subfolder). Skip this entirely for non-visual changes — most reviews have no screenshots.
+
 If real work falls out of scope (latent bugs, refactors, missing tests), first use
 `terminal-cli mcp list_agents repo={{REPO_BASENAME}}` to choose exactly one owner,
 then file backlog tickets via `terminal-cli mcp file_ticket repo={{REPO_BASENAME}}
