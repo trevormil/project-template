@@ -43,13 +43,20 @@ you. Shell-helper path below is the fallback when MCP isn't installed; use
 [`EXAMPLE.md`](./EXAMPLE.md). Counter at `.TerMinal/backlog/.next-id`.
 Legacy v1 repos that already have `backlog/` continue to use `backlog/.next-id`.
 
+**Obsidian-provider repos** (`.TerMinal/tickets.json` → `provider: obsidian`, or
+the `$OBSIDIAN_TICKETS_DIR` env set by TerMinal) keep tickets in an external
+vault, NOT the repo. Never resolve the store by hand — always use
+`bin/ticket-dir`, which returns the right directory (vault or backlog) so
+allocate-id / write / list all target the same place.
+
 ## Helper scripts (carried by this skill)
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel)"
 SKILL="$ROOT/.claude/skills/ticket"
-BACKLOG_DIR=$([ -d "$ROOT/backlog" ] && [ ! -f "$ROOT/.TerMinal/template.json" ] && echo "$ROOT/backlog" || echo "$ROOT/.TerMinal/backlog")
+BACKLOG_DIR="$("$SKILL/bin/ticket-dir")"   # Obsidian vault or repo backlog
 
+"$SKILL/bin/ticket-dir"          # resolve the ticket store dir
 "$SKILL/bin/next-ticket-id"      # atomically allocate next id
 "$SKILL/bin/tickets"             # list all
 "$SKILL/bin/tickets open"        # by status

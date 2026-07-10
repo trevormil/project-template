@@ -12,12 +12,9 @@
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-if [ -d "$ROOT/backlog" ] && [ ! -f "$ROOT/.TerMinal/template.json" ]; then
-  BACKLOG_REL="backlog"
-else
-  BACKLOG_REL=".TerMinal/backlog"
-fi
-BACKLOG="$ROOT/$BACKLOG_REL"
+# Resolve the store (Obsidian vault or repo backlog) via the shared helper so id
+# allocation always targets the same dir the ticket file is written to.
+BACKLOG="$("$(dirname "$0")/ticket-dir")"
 COUNTER="$BACKLOG/.next-id"
 LOCK="$BACKLOG/.next-id.lock"
 
