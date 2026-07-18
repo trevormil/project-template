@@ -1,13 +1,5 @@
 [
   {
-    "id": "open-tickets",
-    "title": "Open tickets",
-    "icon": "🎫",
-    "command": ".claude/skills/ticket/bin/tickets open 2>/dev/null | tail -n +3 | wc -l | tr -d ' '",
-    "intervalMs": 5000,
-    "mode": "big"
-  },
-  {
     "id": "hitl",
     "title": "Needs you",
     "icon": "🙋",
